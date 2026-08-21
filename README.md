@@ -18,7 +18,7 @@ The toolkit does not grant authority to launch or close the game, modify a live 
 
 ## Install in Codex
 
-Clone the repository, then add its root as a local Codex plugin or marketplace source. The plugin exposes seven skills and two optional local MCP servers.
+Clone the repository, then add its root as a local Codex plugin or marketplace source. The default plugin exposes seven progressively loaded skills and starts **no background MCP or Python processes**.
 
 Requirements:
 
@@ -27,7 +27,17 @@ Requirements:
 - PowerShell 7 or Windows PowerShell 5.1
 - a legally installed copy of KCD2 for game-specific inspection
 
-The MCP launchers use the bundled Python source under `runtime/src` and do not download dependencies or game content.
+The two read-only MCP servers are advanced opt-in components. Their reference configuration is stored at `examples/optional-mcp.json`; enable only the server needed by a dedicated task and disable it afterward. The launchers use the bundled Python source under `runtime/src` and do not download dependencies or game content.
+
+## Performance model
+
+- Default installation: skills only; no persistent helper processes.
+- Mod inspection task: optionally enable only `kcd2-mod-build-deploy`.
+- Native probe task: optionally enable only `kcd2-native-probes`.
+- Ordinary skills load their detailed instructions only when the task matches them.
+- Large schema and runtime directories remain inert until a selected tool imports or reads them.
+
+Do not globally enable both MCP servers. Codex may otherwise start a separate Python helper for every active task, increasing startup latency and memory use.
 
 ## Skills
 

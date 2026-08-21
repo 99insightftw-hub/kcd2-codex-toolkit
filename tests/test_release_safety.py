@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import json
 import unittest
 from pathlib import Path
 
@@ -19,6 +20,16 @@ FORBIDDEN_TEXT = re.compile(
 
 
 class ReleaseSafetyTests(unittest.TestCase):
+    def test_default_plugin_starts_no_background_servers(self) -> None:
+        manifest = json.loads((ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
+        self.assertNotIn("mcpServers", manifest)
+        self.assertFalse((ROOT / ".mcp.json").exists())
+        optional = json.loads((ROOT / "examples" / "optional-mcp.json").read_text(encoding="utf-8"))
+        self.assertEqual(
+            ["kcd2-mod-build-deploy", "kcd2-native-probes"],
+            sorted(optional["mcpServers"]),
+        )
+
     def test_no_proprietary_or_generated_payloads(self) -> None:
         offenders = []
         for path in ROOT.rglob("*"):

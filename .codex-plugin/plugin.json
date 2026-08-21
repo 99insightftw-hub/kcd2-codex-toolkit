@@ -14,6 +14,5 @@
     "category": "Developer Tools",
     "capabilities": ["KCD2 mod analysis", "deterministic packaging", "guarded deployment", "native evidence research"],
     "defaultPrompt": "Analyze this KCD2 mod task evidence-first and use the safest applicable workflow."
-  },
-  "mcpServers": "./.mcp.json"
+  }
 }
