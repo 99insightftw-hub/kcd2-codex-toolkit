@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/log-diagnosis-v2.schema.json",
+  "title": "KCD2 log diagnosis v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "diagnosis_id",
+    "scope",
+    "severity",
+    "findings",
+    "implicated_packages",
+    "redactions",
+    "pagination",
+    "coverage",
+    "evidence_grade"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.log-diagnosis.v2"
+    },
+    "diagnosis_id": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "latest_boot",
+        "start_line",
+        "end_line",
+        "complete_boot"
+      ],
+      "properties": {
+        "latest_boot": {
+          "type": "boolean"
+        },
+        "start_line": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end_line": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "complete_boot": {
+          "type": "boolean"
+        }
+      }
+    },
+    "severity": {
+      "enum": [
+        "informational",
+        "warning",
+        "error",
+        "fatal",
+        "unknown"
+      ]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "line_numbers",
+          "message",
+          "attribution_level",
+          "package"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "line_numbers": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "attribution_level": {
+            "enum": [
+              "DIRECT_PAK_AND_MEMBER",
+              "DIRECT_MEMBER_PROVIDER_RESOLVED",
+              "TEMPORAL_ASSOCIATION_ONLY",
+              "NO_DEFENSIBLE_ATTRIBUTION"
+            ]
+          },
+          "package": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "implicated_packages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "redactions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "pagination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "details_available",
+        "continuation_token"
+      ],
+      "properties": {
+        "details_available": {
+          "type": "boolean"
+        },
+        "continuation_token": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "coverage": {
+      "type": "string"
+    },
+    "evidence_grade": {
+      "type": "string"
+    }
+  }
+}

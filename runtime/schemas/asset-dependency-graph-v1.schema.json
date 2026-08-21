@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kcd2.local/schemas/asset-dependency-graph-v1.schema.json",
+  "title": "KCD2 static visual and material dependency graph v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "graph_id", "schema_version", "snapshot_id", "requested_target_path", "target_path",
+    "coverage", "status", "evidence_layer", "runtime_state", "runtime_proof", "nodes",
+    "edges", "diagnostics", "resolution"
+  ],
+  "properties": {
+    "graph_id": {"type": "string", "pattern": "^asset-graph:sha256:[0-9a-f]{64}$"},
+    "schema_version": {"const": "kcd2.asset-dependency-graph.v1"},
+    "snapshot_id": {"$ref": "#/$defs/text"},
+    "requested_target_path": {"$ref": "#/$defs/text"},
+    "target_path": {"$ref": "#/$defs/text"},
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path_coverage_complete", "provider_order_complete"],
+      "properties": {
+        "path_coverage_complete": {"type": "boolean"},
+        "provider_order_complete": {"type": "boolean"}
+      }
+    },
+    "status": {"enum": ["resolved", "missing_dependencies", "incomplete_coverage", "ambiguous_winner", "unresolved"]},
+    "evidence_layer": {"const": "static"},
+    "runtime_state": {"const": "unknown"},
+    "runtime_proof": {"const": false},
+    "nodes": {"type": "array", "maxItems": 16384, "items": {"$ref": "#/$defs/node"}},
+    "edges": {"type": "array", "maxItems": 32768, "items": {"$ref": "#/$defs/edge"}},
+    "diagnostics": {"type": "array", "maxItems": 32768, "items": {"$ref": "#/$defs/diagnostic"}},
+    "resolution": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/resolution"}]}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 2048},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "header": {
+      "type": "object", "additionalProperties": false,
+      "required": ["format", "magic", "version", "payload_bytes"],
+      "properties": {
+        "format": {"enum": ["dds", "cgf", "cga", "chr", "skin", "compiled_effect"]},
+        "magic": {"$ref": "#/$defs/text"},
+        "version": {"type": "integer", "minimum": 0, "maximum": 65535},
+        "payload_bytes": {"type": "integer", "minimum": 1, "maximum": 1099511627776}
+      }
+    },
+    "node": {
+      "type": "object", "additionalProperties": false,
+      "required": ["asset_id", "kind", "path", "provider_id", "representation", "content_sha256", "header"],
+      "properties": {
+        "asset_id": {"$ref": "#/$defs/text"},
+        "kind": {"enum": ["model", "material", "texture", "dds_stream", "particle", "effect", "archetype", "light", "emitter", "phase", "lod"]},
+        "path": {"$ref": "#/$defs/text"},
+        "provider_id": {"$ref": "#/$defs/text"},
+        "representation": {"enum": ["binary_payload", "reference"]},
+        "content_sha256": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]},
+        "header": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/header"}]}
+      }
+    },
+    "edge": {
+      "type": "object", "additionalProperties": false,
+      "required": ["from_path", "relationship", "declared_target_path", "to_path", "required", "fallback_path", "fallback_used"],
+      "properties": {
+        "from_path": {"$ref": "#/$defs/text"},
+        "relationship": {"enum": ["uses_material", "uses_texture", "uses_particle", "uses_effect", "uses_archetype", "uses_light", "uses_emitter", "inherits", "phase_link", "lod_link", "falls_back_to"]},
+        "declared_target_path": {"$ref": "#/$defs/text"},
+        "to_path": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/text"}]},
+        "required": {"type": "boolean"},
+        "fallback_path": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/text"}]},
+        "fallback_used": {"type": "boolean"}
+      }
+    },
+    "diagnostic": {
+      "type": "object", "additionalProperties": false,
+      "required": ["code", "source_path", "target_path", "fallback_path", "message"],
+      "properties": {
+        "code": {"enum": ["MISSING_REFERENCE", "INCOMPLETE_COVERAGE", "AMBIGUOUS_WINNER"]},
+        "source_path": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/text"}]},
+        "target_path": {"$ref": "#/$defs/text"},
+        "fallback_path": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/text"}]},
+        "message": {"$ref": "#/$defs/text"}
+      }
+    },
+    "resolution": {
+      "type": "object", "additionalProperties": false,
+      "required": ["asset_id", "path", "provider_id", "provider_chain", "resolution_mode", "full_override_acknowledged", "representation", "content_sha256"],
+      "properties": {
+        "asset_id": {"$ref": "#/$defs/text"},
+        "path": {"$ref": "#/$defs/text"},
+        "provider_id": {"$ref": "#/$defs/text"},
+        "provider_chain": {"type": "array", "minItems": 1, "maxItems": 4096, "items": {"$ref": "#/$defs/text"}},
+        "resolution_mode": {"const": "full_override"},
+        "full_override_acknowledged": {"const": true},
+        "representation": {"enum": ["binary_payload", "reference"]},
+        "content_sha256": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]}
+      }
+    }
+  }
+}

@@ -1,0 +1,240 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/live-readonly-acceptance-receipt-v1.schema.json",
+  "title": "KCD2 live read-only acceptance receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "receipt_id",
+    "execution_class",
+    "environment_profile_id",
+    "environment_profile_sha256",
+    "authorization",
+    "started_at",
+    "closed_at",
+    "source_revisions",
+    "tool_revisions",
+    "cases",
+    "mutation_count",
+    "unresolved_case_ids",
+    "evidence_states",
+    "overall_status"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.live-readonly-acceptance-receipt.v1"},
+    "receipt_id": {"$ref": "#/$defs/text"},
+    "execution_class": {"enum": ["non_live_fixture", "live_read_only"]},
+    "environment_profile_id": {"$ref": "#/$defs/text"},
+    "environment_profile_sha256": {"$ref": "#/$defs/sha256"},
+    "authorization": {"$ref": "#/$defs/authorization"},
+    "started_at": {"$ref": "#/$defs/timestamp"},
+    "closed_at": {"$ref": "#/$defs/timestamp"},
+    "source_revisions": {"$ref": "#/$defs/revisions"},
+    "tool_revisions": {"$ref": "#/$defs/revisions"},
+    "cases": {
+      "type": "array",
+      "minItems": 11,
+      "maxItems": 11,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/case"},
+      "allOf": [
+        {"contains": {"properties": {"case_id": {"const": "active_snapshot_freshness"}}}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"case_id": {"const": "selected_mod_exact_scope"}}}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"case_id": {"const": "targeted_refresh_dry_run_scope"}}}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"case_id": {"const": "packaging_profile_consistency"}}}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"case_id": {"const": "workshop_provider_state"}}}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"case_id": {"const": "latest_boot_log_diagnosis"}}}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"case_id": {"const": "exact_session_inspection"}}}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"case_id": {"const": "public_catalog_visibility"}}}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"case_id": {"const": "research_graph_discovery"}}}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"case_id": {"const": "requested_output_limits"}}}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"case_id": {"const": "cross_tool_identity_consistency"}}}, "minContains": 1, "maxContains": 1}
+      ]
+    },
+    "mutation_count": {"type": "integer", "minimum": 0, "maximum": 1000000},
+    "unresolved_case_ids": {
+      "type": "array",
+      "maxItems": 11,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/case_id"}
+    },
+    "evidence_states": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["non_live", "live_read_only"],
+      "properties": {
+        "non_live": {"$ref": "#/$defs/evidence_state"},
+        "live_read_only": {"$ref": "#/$defs/evidence_state"}
+      }
+    },
+    "overall_status": {"enum": ["PASS", "FAIL", "PARTIAL", "BLOCKED"]}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"execution_class": {"const": "non_live_fixture"}}},
+      "then": {
+        "properties": {
+          "authorization": {"properties": {"execution_class": {"const": "non_live_fixture"}}},
+          "evidence_states": {"properties": {"live_read_only": {"const": "NOT_RUN"}}}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"execution_class": {"const": "live_read_only"}}},
+      "then": {
+        "properties": {
+          "authorization": {"properties": {"execution_class": {"const": "live_read_only"}}},
+          "evidence_states": {
+            "properties": {"live_read_only": {"enum": ["PASS", "FAIL", "PARTIAL", "BLOCKED"]}}
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"overall_status": {"const": "PASS"}}},
+      "then": {
+        "properties": {
+          "mutation_count": {"const": 0},
+          "unresolved_case_ids": {"maxItems": 0}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 2048},
+    "timestamp": {"type": "string", "format": "date-time", "maxLength": 64},
+    "sha256": {"type": "string", "pattern": "^[0-9A-Fa-f]{64}$"},
+    "case_id": {
+      "enum": [
+        "active_snapshot_freshness",
+        "selected_mod_exact_scope",
+        "targeted_refresh_dry_run_scope",
+        "packaging_profile_consistency",
+        "workshop_provider_state",
+        "latest_boot_log_diagnosis",
+        "exact_session_inspection",
+        "public_catalog_visibility",
+        "research_graph_discovery",
+        "requested_output_limits",
+        "cross_tool_identity_consistency"
+      ]
+    },
+    "evidence_state": {
+      "enum": ["NOT_RUN", "NOT_RECORDED", "PASS", "FAIL", "PARTIAL", "BLOCKED"]
+    },
+    "revisions": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 64,
+      "propertyNames": {"minLength": 1, "maxLength": 2048},
+      "additionalProperties": {"$ref": "#/$defs/sha256"}
+    },
+    "hash_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject", "sha256"],
+      "properties": {
+        "subject": {"$ref": "#/$defs/text"},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "authorization_id",
+        "execution_class",
+        "environment_profile_id",
+        "environment_profile_sha256",
+        "authorized_at",
+        "expires_at",
+        "case_ids",
+        "source_revisions",
+        "tool_revisions",
+        "binding_sha256"
+      ],
+      "properties": {
+        "schema_version": {"const": "kcd2.live-readonly-authorization.v1"},
+        "authorization_id": {"$ref": "#/$defs/text"},
+        "execution_class": {"enum": ["non_live_fixture", "live_read_only"]},
+        "environment_profile_id": {"$ref": "#/$defs/text"},
+        "environment_profile_sha256": {"$ref": "#/$defs/sha256"},
+        "authorized_at": {"$ref": "#/$defs/timestamp"},
+        "expires_at": {"$ref": "#/$defs/timestamp"},
+        "case_ids": {
+          "type": "array",
+          "minItems": 11,
+          "maxItems": 11,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/case_id"}
+        },
+        "source_revisions": {"$ref": "#/$defs/revisions"},
+        "tool_revisions": {"$ref": "#/$defs/revisions"},
+        "binding_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id",
+        "status",
+        "environment_profile_id",
+        "environment_profile_sha256",
+        "source_revisions",
+        "tool_revisions",
+        "input_hashes",
+        "output_hashes",
+        "reads",
+        "writes",
+        "protected_state_before",
+        "protected_state_after",
+        "drifted_protected_subjects",
+        "mutation_count",
+        "notes"
+      ],
+      "properties": {
+        "case_id": {"$ref": "#/$defs/case_id"},
+        "status": {"enum": ["PASS", "FAIL", "BLOCKED", "INCONCLUSIVE"]},
+        "environment_profile_id": {"$ref": "#/$defs/text"},
+        "environment_profile_sha256": {"$ref": "#/$defs/sha256"},
+        "source_revisions": {"$ref": "#/$defs/revisions"},
+        "tool_revisions": {"$ref": "#/$defs/revisions"},
+        "input_hashes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4096,
+          "items": {"$ref": "#/$defs/hash_record"}
+        },
+        "output_hashes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4096,
+          "items": {"$ref": "#/$defs/hash_record"}
+        },
+        "reads": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4096,
+          "items": {"$ref": "#/$defs/text"}
+        },
+        "writes": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": {"$ref": "#/$defs/text"}
+        },
+        "protected_state_before": {"$ref": "#/$defs/revisions"},
+        "protected_state_after": {"$ref": "#/$defs/revisions"},
+        "drifted_protected_subjects": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": {"$ref": "#/$defs/text"}
+        },
+        "mutation_count": {"type": "integer", "minimum": 0, "maximum": 8192},
+        "notes": {"$ref": "#/$defs/text"}
+      }
+    }
+  }
+}

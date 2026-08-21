@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kcd2-toolchain.local/schemas/weapon-scope-family-registry-v1.schema.json",
+  "title": "KCD2 weapon scope family registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "registry_id", "item_ids", "families"],
+  "properties": {
+    "schema_version": {"const": "kcd2.weapon-scope-family-registry.v1"},
+    "registry_id": {"$ref": "#/$defs/text"},
+    "item_ids": {"type": "array", "minItems": 1, "maxItems": 4096, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "families": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/family"}}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "ids": {"type": "array", "minItems": 1, "maxItems": 4096, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "family": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["family_kind", "examined", "evidence_refs", "selectors"],
+      "properties": {
+        "family_kind": {"enum": ["action", "sync", "movement", "pose", "adb"]},
+        "examined": {"type": "boolean"},
+        "evidence_refs": {"type": "array", "maxItems": 256, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+        "selectors": {"type": "array", "maxItems": 1024, "items": {"$ref": "#/$defs/selector"}}
+      }
+    },
+    "selector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selector_id", "selector_kind", "matched_item_ids", "intended_item_ids"],
+      "properties": {
+        "selector_id": {"$ref": "#/$defs/text"},
+        "selector_kind": {"enum": ["exact_item", "broad"]},
+        "matched_item_ids": {"$ref": "#/$defs/ids"},
+        "intended_item_ids": {"$ref": "#/$defs/ids"},
+        "isolation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "item_ids"],
+          "properties": {"kind": {"const": "exact_item_ids"}, "item_ids": {"$ref": "#/$defs/ids"}}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local/kcd2/schemas/r7-portfolio-release-v1.schema.json",
+  "title": "KCD2 REL-607 non-live portfolio release manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "task_id",
+    "release_id",
+    "classification",
+    "source",
+    "release_profile_sha256",
+    "dependencies",
+    "packages",
+    "reports",
+    "release_states",
+    "portfolio_provider_count",
+    "combat_native_provider_count",
+    "installation_performed",
+    "production_index_written",
+    "game_or_plugin_targets_read"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "const": "https://local/kcd2/schemas/r7-portfolio-release-v1.schema.json"
+    },
+    "schema_version": {"type": "string", "const": "kcd2.r7-portfolio-release.v1"},
+    "task_id": {"type": "string", "const": "REL-607"},
+    "release_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "classification": {"type": "string", "const": "non_live"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["revision", "revision_state"],
+      "properties": {
+        "revision": {
+          "type": "string",
+          "maxLength": 40,
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "revision_state": {"type": "string", "enum": ["clean", "modified_worktree"]}
+      }
+    },
+    "release_profile_sha256": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "dependencies": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["task_id", "status"],
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "maxLength": 32,
+            "pattern": "^[A-Z]+-[0-9]{3}$"
+          },
+          "status": {"type": "string", "const": "done"}
+        }
+      }
+    },
+    "packages": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "path", "sha256", "size"],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "adapter",
+              "index_runtime_candidate",
+              "mod_build_deploy_plugin",
+              "native_probes_plugin",
+              "portfolio_contracts_bundle",
+              "research_graph_plugin",
+              "workflow_orchestrator_plugin"
+            ]
+          },
+          "component": {"type": "string", "minLength": 1, "maxLength": 128},
+          "path": {"type": "string", "minLength": 1, "maxLength": 1024},
+          "sha256": {
+            "type": "string",
+            "maxLength": 64,
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "size": {"type": "integer", "minimum": 1, "maximum": 268435456}
+        }
+      }
+    },
+    "reports": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 1024}
+    },
+    "release_states": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "implemented",
+        "non_live_tested",
+        "live_read_only_accepted",
+        "accepted_external_risk",
+        "actually_resolved",
+        "blocked_source"
+      ],
+      "properties": {
+        "implemented": {"type": "string", "const": "PASS"},
+        "non_live_tested": {"type": "string", "const": "PASS"},
+        "live_read_only_accepted": {"type": "string", "const": "NOT_RUN"},
+        "accepted_external_risk": {"type": "string", "const": "NOT_ACCEPTED"},
+        "actually_resolved": {"type": "string", "const": "OPEN"},
+        "blocked_source": {"type": "string", "enum": ["YES", "NO"]}
+      }
+    },
+    "portfolio_provider_count": {"type": "integer", "minimum": 8, "maximum": 8},
+    "combat_native_provider_count": {"type": "integer", "minimum": 1, "maximum": 1},
+    "installation_performed": {"type": "boolean", "const": false},
+    "production_index_written": {"type": "boolean", "const": false},
+    "game_or_plugin_targets_read": {"type": "boolean", "const": false}
+  }
+}

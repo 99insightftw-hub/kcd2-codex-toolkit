@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/portfolio-orchestrator-route-v1.schema.json",
+  "title": "KCD2 portfolio orchestrator route",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "investigation_id",
+    "affected_domains",
+    "provider_routes",
+    "blocked_routes",
+    "next_operation"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.portfolio-orchestrator-route.v1"
+    },
+    "investigation_id": {
+      "type": "string"
+    },
+    "affected_domains": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "provider_routes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "domain",
+          "provider_id",
+          "status"
+        ],
+        "properties": {
+          "domain": {
+            "type": "string"
+          },
+          "provider_id": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "READY",
+              "BLOCKED",
+              "UNSUPPORTED",
+              "INCOMPLETE_COVERAGE"
+            ]
+          },
+          "receipt_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "blocked_routes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "next_operation": {
+      "type": "string"
+    }
+  }
+}

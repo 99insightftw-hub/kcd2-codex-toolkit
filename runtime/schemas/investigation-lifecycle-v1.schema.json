@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/investigation-lifecycle-v1.schema.json",
+  "title": "KCD2 investigation lifecycle v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "investigation_id",
+    "branch_id",
+    "supersedes_investigation_id",
+    "question",
+    "scope",
+    "cross_tool_identity_id",
+    "state",
+    "hypothesis_ids",
+    "transitions",
+    "head_transition_sha256",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.investigation-lifecycle.v1"},
+    "investigation_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "branch_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "supersedes_investigation_id": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "question": {"type": "string", "minLength": 1, "maxLength": 4096},
+    "scope": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    },
+    "cross_tool_identity_id": {"$ref": "#/$defs/identity_id"},
+    "state": {"$ref": "#/$defs/state"},
+    "hypothesis_ids": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    },
+    "transitions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4096,
+      "items": {"$ref": "#/$defs/transition"}
+    },
+    "head_transition_sha256": {"$ref": "#/$defs/sha256"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "updated_at": {"type": "string", "format": "date-time"},
+    "blockers": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {"type": "string", "minLength": 1, "maxLength": 512}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "identity_id": {
+      "type": "string",
+      "pattern": "^identity:sha256:[0-9a-f]{64}$"
+    },
+    "state": {
+      "enum": [
+        "CREATED",
+        "ENVIRONMENT_VERIFIED",
+        "STATIC_EVIDENCE_READY",
+        "TEST_PLANNED",
+        "TEST_READY",
+        "CAPTURING",
+        "CAPTURE_CLOSED",
+        "CAPTURE_VALIDATED",
+        "EVIDENCE_IMPORTED",
+        "CLEANUP_VERIFIED",
+        "NEXT_ACTION_READY",
+        "COMPLETED",
+        "BLOCKED",
+        "ABORTED"
+      ]
+    },
+    "transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sequence",
+        "event_id",
+        "from_state",
+        "to_state",
+        "identity_id",
+        "identity_sha256",
+        "operation_receipt_id",
+        "previous_transition_sha256",
+        "transition_sha256",
+        "recorded_at"
+      ],
+      "properties": {
+        "sequence": {"type": "integer", "minimum": 0, "maximum": 4095},
+        "event_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "from_state": {
+          "oneOf": [
+            {"$ref": "#/$defs/state"},
+            {"type": "null"}
+          ]
+        },
+        "to_state": {"$ref": "#/$defs/state"},
+        "identity_id": {"$ref": "#/$defs/identity_id"},
+        "identity_sha256": {"$ref": "#/$defs/sha256"},
+        "operation_receipt_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "previous_transition_sha256": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "transition_sha256": {"$ref": "#/$defs/sha256"},
+        "recorded_at": {"type": "string", "format": "date-time"},
+        "reason_codes": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 128}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/combat-route-lint-v1.schema.json",
+  "title": "KCD2 combat route lint report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "model_id", "status", "summary", "family_audit", "diagnostics", "reason_codes"],
+  "properties": {
+    "schema_version": {"const": "kcd2.combat-route-lint.v1"},
+    "model_id": {"$ref": "#/$defs/text"}, "status": {"enum": ["PASS", "FAIL"]},
+    "summary": {"$ref": "#/$defs/summary"},
+    "family_audit": {"type": "array", "maxItems": 1024, "items": {"$ref": "#/$defs/family_audit"}},
+    "diagnostics": {"type": "array", "maxItems": 1048576, "items": {"$ref": "#/$defs/diagnostic"}},
+    "reason_codes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z0-9_]+$", "maxLength": 128}}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^[^\\u0000]+$"},
+    "count": {"type": "integer", "minimum": 0},
+    "summary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["family_count", "route_count", "node_count", "edge_count", "scope_leak_count", "non_terminating_route_count", "diagnostic_count", "interaction_kind_counts"],
+      "properties": {
+        "family_count": {"$ref": "#/$defs/count"}, "route_count": {"$ref": "#/$defs/count"},
+        "node_count": {"$ref": "#/$defs/count"}, "edge_count": {"$ref": "#/$defs/count"},
+        "scope_leak_count": {"$ref": "#/$defs/count"}, "non_terminating_route_count": {"$ref": "#/$defs/count"},
+        "diagnostic_count": {"$ref": "#/$defs/count"},
+        "interaction_kind_counts": {
+          "type": "object", "additionalProperties": false,
+          "properties": {"combat_sync": {"$ref": "#/$defs/count"}, "combat_action": {"$ref": "#/$defs/count"}, "non_combat_sync": {"$ref": "#/$defs/count"}}
+        }
+      }
+    },
+    "slot": {
+      "type": "object", "additionalProperties": false, "required": ["mode", "orientation"],
+      "properties": {"mode": {"$ref": "#/$defs/text"}, "orientation": {"$ref": "#/$defs/text"}}
+    },
+    "family_audit": {
+      "type": "object", "additionalProperties": false,
+      "required": ["family_id", "interaction_kind", "symmetry_required", "expected_slot_count", "observed_slot_count", "missing_slots"],
+      "properties": {
+        "family_id": {"$ref": "#/$defs/text"},
+        "interaction_kind": {"enum": ["combat_sync", "combat_action", "non_combat_sync"]},
+        "symmetry_required": {"type": "boolean"}, "expected_slot_count": {"$ref": "#/$defs/count"},
+        "observed_slot_count": {"$ref": "#/$defs/count"},
+        "missing_slots": {"type": "array", "maxItems": 1024, "items": {"$ref": "#/$defs/slot"}}
+      }
+    },
+    "diagnostic": {
+      "type": "object", "additionalProperties": false, "required": ["code", "scope", "detail", "evidence_layer"],
+      "properties": {
+        "code": {"type": "string", "pattern": "^[A-Z0-9_]+$", "maxLength": 128},
+        "scope": {"$ref": "#/$defs/text"}, "detail": {"$ref": "#/$defs/text"},
+        "evidence_layer": {"const": "static"}
+      }
+    }
+  }
+}

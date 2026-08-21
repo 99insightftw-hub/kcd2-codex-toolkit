@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/runtime-session-record-v1.schema.json",
+  "title": "KCD2 exact runtime session record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "session_id",
+    "cross_tool_identity",
+    "latest_boot_id",
+    "candidate_sha256",
+    "deployment_sha256",
+    "source_sha256",
+    "observations",
+    "raw_handles",
+    "session_binding_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.runtime-session-record.v1"},
+    "session_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "cross_tool_identity": {"$ref": "cross-tool-identity-v1.schema.json"},
+    "latest_boot_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "candidate_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "deployment_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "session_binding_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "observations": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sequence", "semantic", "payload", "session_binding_sha256"],
+        "properties": {
+          "sequence": {"type": "integer", "minimum": 0},
+          "semantic": {"type": "string", "minLength": 1, "maxLength": 128},
+          "payload": {},
+          "session_binding_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+        }
+      }
+    },
+    "raw_handles": {
+      "type": "array",
+      "maxItems": 1024,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "handle_id",
+          "exact_locator",
+          "sha256",
+          "byte_size",
+          "excerpt",
+          "excerpt_truncated",
+          "session_binding_sha256"
+        ],
+        "properties": {
+          "handle_id": {"type": "string", "minLength": 1, "maxLength": 256},
+          "exact_locator": {"type": "string", "minLength": 1, "maxLength": 8192},
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "byte_size": {"type": "integer", "minimum": 0, "maximum": 1099511627776},
+          "excerpt": {"type": "string", "maxLength": 4096},
+          "excerpt_truncated": {"type": "boolean"},
+          "session_binding_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/coverage-validity-v1.schema.json",
+  "title": "KCD2 coverage validity v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "coverage_id",
+    "operation",
+    "basis",
+    "requested_scope",
+    "layers",
+    "overall_status",
+    "claim_permissions",
+    "reason_codes"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.coverage-validity.v1"
+    },
+    "coverage_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "operation": {
+      "type": "string",
+      "minLength": 1
+    },
+    "basis": {
+      "enum": [
+        "active_snapshot",
+        "direct_exact_scan",
+        "manual_contributions",
+        "hybrid"
+      ]
+    },
+    "requested_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mod_ids",
+        "canonical_paths",
+        "provider_kinds",
+        "artifact_classes"
+      ],
+      "properties": {
+        "mod_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "canonical_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "provider_kinds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "artifact_classes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "layers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "layer_id",
+          "status",
+          "fresh",
+          "items_considered",
+          "bytes_read",
+          "cap",
+          "uncovered_reason_codes",
+          "representative_uncovered_paths"
+        ],
+        "properties": {
+          "layer_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "COMPLETE",
+              "COMPLETE_FOR_REQUESTED_SCOPE",
+              "PARTIAL_LIMIT_REACHED",
+              "PARTIAL_STALE",
+              "NOT_CONFIGURED",
+              "UNAVAILABLE",
+              "UNKNOWN"
+            ]
+          },
+          "fresh": {
+            "type": "boolean"
+          },
+          "items_considered": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bytes_read": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cap": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "limit",
+              "observed",
+              "reached"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string"
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "observed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "reached": {
+                "type": "boolean"
+              }
+            }
+          },
+          "uncovered_reason_codes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "representative_uncovered_paths": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "overall_status": {
+      "enum": [
+        "COMPLETE",
+        "COMPLETE_FOR_REQUESTED_SCOPE",
+        "PARTIAL_LIMIT_REACHED",
+        "PARTIAL_STALE",
+        "INCONCLUSIVE",
+        "UNAVAILABLE"
+      ]
+    },
+    "claim_permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "presence_claim_allowed",
+        "absence_claim_allowed",
+        "winner_claim_allowed",
+        "conflict_absence_claim_allowed"
+      ],
+      "properties": {
+        "presence_claim_allowed": {
+          "type": "boolean"
+        },
+        "absence_claim_allowed": {
+          "type": "boolean"
+        },
+        "winner_claim_allowed": {
+          "type": "boolean"
+        },
+        "conflict_absence_claim_allowed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "reason_codes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -1,0 +1,397 @@
+{
+  "schema_version": "kcd2.plugin-tool-surface.v1",
+  "plugin": {"name": "kcd2-mod-build-deploy", "version": "0.1.0+var.004"},
+  "source_revision": "VAR-004-source-tree",
+  "tools": [
+    {
+      "tool_name": "candidate_parent_diff",
+      "operation_class": "read_only_analysis",
+      "exposure_status": "REGISTERED",
+      "callable_via": "mcp_plugin",
+      "registered": true,
+      "input_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["build_spec_path", "parent_pak_path", "candidate_pak_path"],
+        "properties": {
+          "build_spec_path": {"type": "string", "maxLength": 2048},
+          "parent_pak_path": {"type": "string", "maxLength": 2048},
+          "candidate_pak_path": {"type": "string", "maxLength": 2048},
+          "clean_parent_pak_path": {"type": ["string", "null"], "maxLength": 2048, "default": null},
+          "expected_clean_parent_sha256": {"type": ["string", "null"], "maxLength": 64, "default": null},
+          "max_entries": {"type": "integer", "minimum": 1, "maximum": 1024, "default": 128}
+        }
+      },
+      "output_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schema_version", "status", "spec_id", "parent_sha256", "candidate_sha256", "parent_contamination_detected", "entry_count", "undeclared_change_count", "changed_paths", "paths_truncated", "diagnostic"],
+        "properties": {
+          "schema_version": {"type": "string", "const": "kcd2.candidate-parent-diff-tool.v1"},
+          "status": {"type": "string", "enum": ["PASS", "FAIL", "ERROR"]},
+          "spec_id": {"type": ["string", "null"], "maxLength": 256},
+          "parent_sha256": {"type": ["string", "null"], "maxLength": 64},
+          "candidate_sha256": {"type": ["string", "null"], "maxLength": 64},
+          "parent_contamination_detected": {"type": "boolean"},
+          "entry_count": {"type": "integer", "minimum": 0, "maximum": 16384},
+          "undeclared_change_count": {"type": "integer", "minimum": 0, "maximum": 16384},
+          "changed_paths": {"type": "array", "maxItems": 1024, "items": {"type": "string", "maxLength": 2048}},
+          "paths_truncated": {"type": "boolean"},
+          "diagnostic": {"type": ["string", "null"], "maxLength": 512}
+        }
+      },
+      "example": {
+        "input": {
+          "build_spec_path": "examples/build-spec.derived-with-external.example.json",
+          "parent_pak_path": "tests/fixtures/plugin_tools/missing-parent.pak",
+          "candidate_pak_path": "tests/fixtures/plugin_tools/missing-candidate.pak",
+          "clean_parent_pak_path": null,
+          "expected_clean_parent_sha256": null,
+          "max_entries": 128
+        },
+        "output": {
+          "schema_version": "kcd2.candidate-parent-diff-tool.v1",
+          "status": "ERROR",
+          "spec_id": null,
+          "parent_sha256": null,
+          "candidate_sha256": null,
+          "parent_contamination_detected": false,
+          "entry_count": 0,
+          "undeclared_change_count": 0,
+          "changed_paths": [],
+          "paths_truncated": false,
+          "diagnostic": "PARENT_DIFF_INPUT_INVALID"
+        }
+      },
+      "approval_class": "none",
+      "library_binding": {
+        "module_or_symbol": "kcd2_mod_build_deploy.candidate_parent_diff:candidate_parent_diff",
+        "source_sha256": "447666B7B2FA936711A09D0570C35ACC33DCBD2D83B13DF74ACDAE7D36A0ABF7"
+      },
+      "output_bounds": {"max_response_bytes": 131072, "artifact_spill": false},
+      "smoke_test": {"invoked_through_public_surface": true, "status": "passed", "receipt_id": "api-002:candidate-parent-diff"},
+      "not_exposed_reason": null
+    },
+    {
+      "tool_name": "candidate_package_inspect",
+      "operation_class": "read_only_analysis",
+      "exposure_status": "REGISTERED",
+      "callable_via": "mcp_plugin",
+      "registered": true,
+      "input_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["build_spec_path", "package_path", "game_build"],
+        "properties": {
+          "build_spec_path": {"type": "string", "maxLength": 2048},
+          "package_path": {"type": "string", "maxLength": 2048},
+          "game_build": {"type": "string", "maxLength": 256},
+          "whgame_sha256": {"type": ["string", "null"], "maxLength": 64, "default": null}
+        }
+      },
+      "output_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schema_version", "artifact_sha256", "structural_integrity", "validation_mode", "package_promotion", "xml_tbl_gate", "overall_static_readiness", "diagnostic_codes"],
+        "properties": {
+          "schema_version": {"type": "string", "const": "kcd2.candidate-package-inspection-tool.v1"},
+          "artifact_sha256": {"type": "string", "maxLength": 64},
+          "structural_integrity": {"type": "string", "enum": ["VALID", "CORRUPT", "UNREADABLE"]},
+          "validation_mode": {"type": "string", "enum": ["package_only", "package_with_single_component", "package_with_external_components"]},
+          "package_promotion": {"type": "string", "maxLength": 128},
+          "xml_tbl_gate": {"type": "string", "maxLength": 128},
+          "overall_static_readiness": {"type": "boolean"},
+          "diagnostic_codes": {"type": "array", "maxItems": 256, "items": {"type": "string", "maxLength": 128}}
+        }
+      },
+      "example": {
+        "input": {"build_spec_path": "examples/build-spec.package-only.example.json", "package_path": "tests/fixtures/plugin_tools/missing-package.pak", "game_build": "fixture-build", "whgame_sha256": null},
+        "output": {"schema_version": "kcd2.candidate-package-inspection-tool.v1", "artifact_sha256": "0000000000000000000000000000000000000000000000000000000000000000", "structural_integrity": "UNREADABLE", "validation_mode": "package_only", "package_promotion": "PACKAGE_VALIDATED", "xml_tbl_gate": "NOT_APPLICABLE", "overall_static_readiness": false, "diagnostic_codes": ["NO_CHANGED_XML_TABLES", "PACKAGE_CONTAINER_INVALID"]}
+      },
+      "approval_class": "none",
+      "library_binding": {
+        "module_or_symbol": "kcd2_mod_build_deploy.package_validation:validate_candidate_package",
+        "source_sha256": "E045510F7EC2848CDCEF3242EAA3E88F191BC59F7E979C5B9DF86A6F2DEF22E0"
+      },
+      "output_bounds": {"max_response_bytes": 65536, "artifact_spill": false},
+      "smoke_test": {"invoked_through_public_surface": true, "status": "passed", "receipt_id": "api-002:candidate-package-inspect"},
+      "not_exposed_reason": null
+    },
+    {
+      "tool_name": "provider_inventory_inspect",
+      "operation_class": "read_only_analysis",
+      "exposure_status": "REGISTERED",
+      "callable_via": "mcp_plugin",
+      "registered": true,
+      "input_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["inventory_path"],
+        "properties": {"inventory_path": {"type": "string", "maxLength": 2048}}
+      },
+      "output_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schema_version", "inventory_id", "status", "provider_count", "provider_kinds", "winner_claim_allowed", "absence_claim_allowed", "reason_codes"],
+        "properties": {
+          "schema_version": {"type": "string", "const": "kcd2.provider-inventory-inspection-tool.v1"},
+          "inventory_id": {"type": "string", "maxLength": 256},
+          "status": {"type": "string", "enum": ["complete", "capture_inconclusive"]},
+          "provider_count": {"type": "integer", "minimum": 0, "maximum": 4096},
+          "provider_kinds": {"type": "array", "maxItems": 8, "items": {"type": "string", "maxLength": 64}},
+          "winner_claim_allowed": {"type": "boolean"},
+          "absence_claim_allowed": {"type": "boolean"},
+          "reason_codes": {"type": "array", "maxItems": 256, "items": {"type": "string", "maxLength": 128}}
+        }
+      },
+      "example": {
+        "input": {"inventory_path": "tests/fixtures/plugin_tools/provider-inventory.json"},
+        "output": {"schema_version": "kcd2.provider-inventory-inspection-tool.v1", "inventory_id": "snapshot:plugin-tool-fixture", "status": "complete", "provider_count": 2, "provider_kinds": ["local", "workshop"], "winner_claim_allowed": true, "absence_claim_allowed": true, "reason_codes": []}
+      },
+      "approval_class": "none",
+      "library_binding": {
+        "module_or_symbol": "kcd2_mod_build_deploy.provider_inventory:ProviderInventory",
+        "source_sha256": "5AFFFA72B243D83B7810142013BC1544137BA874A70E72A6BE0B5166784F1625"
+      },
+      "output_bounds": {"max_response_bytes": 32768, "artifact_spill": false},
+      "smoke_test": {"invoked_through_public_surface": true, "status": "passed", "receipt_id": "api-002:provider-inventory-inspect"},
+      "not_exposed_reason": null
+    },
+    {
+      "tool_name": "effective_path_resolve",
+      "operation_class": "read_only_analysis",
+      "exposure_status": "REGISTERED",
+      "callable_via": "mcp_plugin",
+      "registered": true,
+      "input_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["request_path"],
+        "properties": {"request_path": {"type": "string", "maxLength": 2048}}
+      },
+      "output_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schema_version", "inventory_id", "canonical_path", "discovery_mode", "resolution_semantics", "conclusion", "winner_provider_id", "contribution_count", "contributors", "reason_codes", "order_complete"],
+        "properties": {
+          "schema_version": {"type": "string", "const": "kcd2.effective-path-resolution-tool.v1"},
+          "inventory_id": {"type": "string", "maxLength": 256},
+          "canonical_path": {"type": "string", "maxLength": 2048},
+          "discovery_mode": {"type": "string", "maxLength": 64},
+          "resolution_semantics": {"type": "array", "maxItems": 16, "items": {"type": "string", "maxLength": 128}},
+          "conclusion": {"type": "string", "maxLength": 128},
+          "winner_provider_id": {"type": ["string", "null"], "maxLength": 1024},
+          "contribution_count": {"type": "integer", "minimum": 0, "maximum": 4096},
+          "contributors": {"type": "array", "maxItems": 4096, "items": {"type": "string", "maxLength": 1024}},
+          "reason_codes": {"type": "array", "maxItems": 256, "items": {"type": "string", "maxLength": 128}},
+          "order_complete": {"type": "boolean"}
+        }
+      },
+      "example": {
+        "input": {"request_path": "tests/fixtures/plugin_tools/effective-path-request.json"},
+        "output": {"schema_version": "kcd2.effective-path-resolution-tool.v1", "inventory_id": "snapshot:plugin-tool-fixture", "canonical_path": "Libs/UI/HUD/shared.gfx", "discovery_mode": "automatic", "resolution_semantics": ["override_last_wins"], "conclusion": "winner", "winner_provider_id": "provider:workshop:bravo", "contribution_count": 2, "contributors": ["provider:local:alpha", "provider:workshop:bravo"], "reason_codes": ["AUTOMATIC_DISCOVERY", "COVERAGE_AND_ORDER_COMPLETE", "SEMANTICS_OVERRIDE_LAST_WINS"], "order_complete": true}
+      },
+      "approval_class": "none",
+      "library_binding": {
+        "module_or_symbol": "kcd2_mod_build_deploy.effective_path_resolution:resolve_effective_internal_path",
+        "source_sha256": "07086DFE05A0551FD6D7561075012F1891C469D58CDC9BCD87E613244FEA54D7"
+      },
+      "output_bounds": {"max_response_bytes": 65536, "artifact_spill": false},
+      "smoke_test": {"invoked_through_public_surface": true, "status": "passed", "receipt_id": "api-002:effective-path-resolve"},
+      "not_exposed_reason": null
+    },
+    {
+      "tool_name": "plan_candidate_audit",
+      "operation_class": "read_only_analysis",
+      "exposure_status": "REGISTERED",
+      "callable_via": "mcp_plugin",
+      "registered": true,
+      "input_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["request_path"],
+        "properties": {"request_path": {"type": "string", "minLength": 1, "maxLength": 2048}}
+      },
+      "output_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema_version", "plan_id", "status", "evidence_layer", "identity_id",
+          "parent_id", "parent_artifact_sha256", "gates", "unresolved_gates",
+          "unresolved_gate_artifact_sha256", "next_build_requirements",
+          "candidate_created", "mutation_approval_requested"
+        ],
+        "properties": {
+          "schema_version": {"type": "string", "const": "kcd2.candidate-plan-tool.v1"},
+          "plan_id": {"type": "string", "minLength": 1, "maxLength": 256},
+          "status": {"type": "string", "enum": ["READY_TO_BUILD", "BLOCKED"]},
+          "evidence_layer": {"type": "string", "const": "static"},
+          "identity_id": {"type": "string", "maxLength": 80, "pattern": "^identity:sha256:[0-9a-f]{64}$"},
+          "parent_id": {"type": ["string", "null"], "maxLength": 256},
+          "parent_artifact_sha256": {"type": "string", "maxLength": 64, "pattern": "^[0-9a-f]{64}$"},
+          "gates": {
+            "type": "array",
+            "maxItems": 16,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["gate", "status", "reason_codes"],
+              "properties": {
+                "gate": {"type": "string", "maxLength": 64},
+                "status": {"type": "string", "enum": ["PASS", "FAIL", "CAPTURE_INCONCLUSIVE"]},
+                "reason_codes": {"type": "array", "maxItems": 64, "items": {"type": "string", "maxLength": 128}}
+              }
+            }
+          },
+          "unresolved_gates": {"type": "array", "maxItems": 16, "items": {"type": "string", "maxLength": 64}},
+          "unresolved_gate_artifact_sha256": {"type": "string", "maxLength": 64, "pattern": "^[0-9a-f]{64}$"},
+          "next_build_requirements": {"type": "array", "maxItems": 16, "items": {"type": "string", "maxLength": 128}},
+          "candidate_created": {"type": "boolean", "const": false},
+          "mutation_approval_requested": {"type": "boolean", "const": false}
+        }
+      },
+      "example": {
+        "input": {"request_path": "tests/fixtures/plugin_tools/candidate-plan-request.json"},
+        "output": {
+          "schema_version": "kcd2.candidate-plan-tool.v1",
+          "plan_id": "plan:example",
+          "status": "BLOCKED",
+          "evidence_layer": "static",
+          "identity_id": "identity:sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "parent_id": null,
+          "parent_artifact_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "gates": [{"gate": "parent", "status": "FAIL", "reason_codes": ["PARENT_IDENTITY_UNRESOLVED"]}],
+          "unresolved_gates": ["parent"],
+          "unresolved_gate_artifact_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "next_build_requirements": ["BUILD_MUTATION_APPROVAL_REQUIRED"],
+          "candidate_created": false,
+          "mutation_approval_requested": false
+        }
+      },
+      "approval_class": "none",
+      "library_binding": {
+        "module_or_symbol": "kcd2_mod_build_deploy.general_candidate_plan:plan_candidate_audit",
+        "source_sha256": "8FF05DB41A0D478982BDB179C4F083508CAFEBCE4B14495C8EFB88FC4DBC3F2F"
+      },
+      "output_bounds": {"max_response_bytes": 131072, "artifact_spill": false},
+      "smoke_test": {"invoked_through_public_surface": true, "status": "passed", "receipt_id": "orch-001:plan-candidate-audit"},
+      "not_exposed_reason": null
+    },
+    {
+      "tool_name": "compare_variants",
+      "operation_class": "read_only_analysis",
+      "exposure_status": "REGISTERED",
+      "callable_via": "mcp_plugin",
+      "registered": true,
+      "input_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["request_path"],
+        "properties": {
+          "request_path": {"type": "string", "minLength": 1, "maxLength": 2048},
+          "max_differences": {"type": "integer", "minimum": 1, "maximum": 128, "default": 128}
+        }
+      },
+      "output_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema_version", "comparison_id", "before_selection_id", "after_selection_id",
+          "status", "reason_codes", "difference_counts", "differences", "truncated"
+        ],
+        "properties": {
+          "schema_version": {"type": "string", "const": "kcd2.variant-comparison.v1"},
+          "comparison_id": {"type": "string", "maxLength": 90, "pattern": "^variant-comparison:sha256:[0-9a-f]{64}$"},
+          "before_selection_id": {"type": "string", "maxLength": 96, "pattern": "^variant-selection:sha256:[0-9a-f]{64}$"},
+          "after_selection_id": {"type": "string", "maxLength": 96, "pattern": "^variant-selection:sha256:[0-9a-f]{64}$"},
+          "status": {"type": "string", "enum": ["complete", "capture_inconclusive"]},
+          "reason_codes": {"type": "array", "maxItems": 16, "items": {"type": "string", "maxLength": 128}},
+          "difference_counts": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["semantic", "provider", "runtime", "total", "returned"],
+            "properties": {
+              "semantic": {"type": "integer", "minimum": 0, "maximum": 4096},
+              "provider": {"type": "integer", "minimum": 0, "maximum": 4096},
+              "runtime": {"type": "integer", "minimum": 0, "maximum": 2048},
+              "total": {"type": "integer", "minimum": 0, "maximum": 10240},
+              "returned": {"type": "integer", "minimum": 0, "maximum": 128}
+            }
+          },
+          "differences": {
+            "type": "array",
+            "maxItems": 128,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["layer", "key", "before_json", "after_json"],
+              "properties": {
+                "layer": {"type": "string", "enum": ["semantic", "provider", "runtime"]},
+                "key": {"type": "string", "maxLength": 2048},
+                "before_json": {"type": "string", "maxLength": 16384},
+                "after_json": {"type": "string", "maxLength": 16384}
+              }
+            }
+          },
+          "truncated": {"type": "boolean"}
+        }
+      },
+      "example": {
+        "input": {
+          "request_path": "tests/fixtures/variants/variant-release-rollback.json",
+          "max_differences": 128
+        },
+        "output": {
+          "schema_version": "kcd2.variant-comparison.v1",
+          "comparison_id": "variant-comparison:sha256:b426f776e071199f542f0cc6076f74f4945cfa1c1dfe792c215b7af3b676ecb4",
+          "before_selection_id": "variant-selection:sha256:5df0832adc120519900a98efc26f224a5fbcfc6d475400ecb3593ec625352735",
+          "after_selection_id": "variant-selection:sha256:2f1242375d02787eb556410e64df3e1dff8b03ff911491c7e50e0993ae88ed82",
+          "status": "complete",
+          "reason_codes": [],
+          "difference_counts": {"semantic": 1, "provider": 1, "runtime": 1, "total": 3, "returned": 3},
+          "differences": [
+            {
+              "layer": "provider",
+              "key": "Data/config/variant.cfg",
+              "before_json": "{\"artifact_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"path\":\"Data/config/variant.cfg\",\"provider_id\":\"provider:quality\",\"resolution_semantics\":\"override_last_wins\"}",
+              "after_json": "{\"artifact_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"path\":\"Data/config/variant.cfg\",\"provider_id\":\"provider:performance\",\"resolution_semantics\":\"override_last_wins\"}"
+            },
+            {
+              "layer": "runtime",
+              "key": "stats/frame_time_bucket",
+              "before_json": "{\"actual\":\"quality\",\"status\":\"PASS\"}",
+              "after_json": "{\"actual\":\"performance\",\"status\":\"PASS\"}"
+            },
+            {
+              "layer": "semantic",
+              "key": "variant-group:sha256:fe141b51a8e08c39ff090f11d1eab88ae250fce0ab7194b9da9557104c4614a0",
+              "before_json": "{\"details_truncated\":false,\"rule\":\"EXACTLY_ONE\",\"selected_member_count\":1,\"selected_members\":[{\"artifact_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"member_id\":\"variant-member:sha256:95680451637581bf1d69fb3d114d30875e1226344bd95e6f9ad82b9f2bec9bdd\",\"mount_context\":{\"mount_path\":\"Data/Packages\",\"priority\":10},\"provided_resource_count\":1,\"provided_resources_sha256\":\"2c5c7e1768424c686f08b6f33faceeb841547333c13a1fa311b6f2cbeb6239c7\",\"selector\":null}],\"selected_members_sha256\":\"8e9ab74f2810b43d0869dedaac66e3f8b6d9b4d8cdbcae0f2ad697266b51eb4b\"}",
+              "after_json": "{\"details_truncated\":false,\"rule\":\"EXACTLY_ONE\",\"selected_member_count\":1,\"selected_members\":[{\"artifact_sha256\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"member_id\":\"variant-member:sha256:4d98318099e2fd036f509109f3968835e4fc5c71d3616ee6379d2c0885eaf6bf\",\"mount_context\":{\"mount_path\":\"Data/Packages\",\"priority\":10},\"provided_resource_count\":1,\"provided_resources_sha256\":\"569e9b894577cc7a84d50a41aa4b852412baf5bdaf5149d6e3410e62fa912ade\",\"selector\":null}],\"selected_members_sha256\":\"1a4b76edf493b44a9bbfea772d399045e6ddbbb8984b15b105a47af169c40218\"}"
+            }
+          ],
+          "truncated": false
+        }
+      },
+      "approval_class": "none",
+      "library_binding": {
+        "module_or_symbol": "kcd2_toolchain_core.variant_comparison:compare_variants",
+        "source_sha256": "85AF50ECDA8B0967123BB77E9289E3FF2FE933C4B41EA6F6D70ED5B9D594EEC2"
+      },
+      "output_bounds": {"max_response_bytes": 1048576, "artifact_spill": false},
+      "smoke_test": {"invoked_through_public_surface": true, "status": "passed", "receipt_id": "var-004:compare-variants"},
+      "not_exposed_reason": null
+    }
+  ]
+}

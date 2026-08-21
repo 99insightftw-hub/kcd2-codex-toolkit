@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/finish-test-result-v1.schema.json",
+  "title": "KCD2 finish-test capture validity and import-cleanup receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "receipt_id", "investigation_id", "identity_id", "experiment_id", "session_id", "result", "capture_validity", "evidence_import_cleanup", "hypothesis_updates", "silent_retry_performed", "blockers", "next_action_candidates", "created_at"],
+  "properties": {
+    "schema_version": {"const": "kcd2.finish-test-result.v1"},
+    "receipt_id": {"type": "string", "pattern": "^finish-test:sha256:[0-9a-f]{64}$"},
+    "investigation_id": {"$ref": "#/$defs/text"},
+    "identity_id": {"type": "string", "pattern": "^identity:sha256:[0-9a-f]{64}$"},
+    "experiment_id": {"$ref": "#/$defs/text"},
+    "session_id": {"$ref": "#/$defs/text"},
+    "result": {"enum": ["PASS", "BLOCKED", "CAPTURE_INCONCLUSIVE"]},
+    "capture_validity": {"$ref": "#/$defs/capture_validity"},
+    "evidence_import_cleanup": {"$ref": "#/$defs/import_cleanup"},
+    "hypothesis_updates": {"type": "array", "maxItems": 256, "items": {"type": "object"}},
+    "silent_retry_performed": {"const": false},
+    "blockers": {"type": "array", "maxItems": 256, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "next_action_candidates": {"type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "created_at": {"type": "string", "format": "date-time", "maxLength": 64}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 512},
+    "nullable_text": {"type": ["string", "null"], "minLength": 1, "maxLength": 256},
+    "count": {"type": "integer", "minimum": 0, "maximum": 1000000},
+    "capture_validity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["receipt_id", "valid", "observed_bounds", "reason_codes"],
+      "properties": {
+        "receipt_id": {"$ref": "#/$defs/text"},
+        "valid": {"type": "boolean"},
+        "observed_bounds": {
+          "type": "object", "additionalProperties": false,
+          "required": ["attempts", "duration_seconds", "event_count"],
+          "properties": {"attempts": {"$ref": "#/$defs/count"}, "duration_seconds": {"$ref": "#/$defs/count"}, "event_count": {"$ref": "#/$defs/count"}}
+        },
+        "reason_codes": {"type": "array", "maxItems": 256, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}}
+      }
+    },
+    "import_cleanup": {
+      "type": "object", "additionalProperties": false,
+      "required": ["import_receipt_id", "cleanup_receipt_id", "evidence_imported", "immutable_evidence", "deployment_bound", "evidence_ids", "cleanup_verified"],
+      "properties": {
+        "import_receipt_id": {"$ref": "#/$defs/nullable_text"},
+        "cleanup_receipt_id": {"$ref": "#/$defs/text"},
+        "evidence_imported": {"type": "boolean"},
+        "immutable_evidence": {"type": "boolean"},
+        "deployment_bound": {"type": "boolean"},
+        "evidence_ids": {"type": "array", "maxItems": 512, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+        "cleanup_verified": {"type": "boolean"}
+      }
+    }
+  },
+  "allOf": [
+    {"if": {"properties": {"result": {"const": "PASS"}}, "required": ["result"]}, "then": {"properties": {"capture_validity": {"properties": {"valid": {"const": true}, "reason_codes": {"maxItems": 0}}}, "evidence_import_cleanup": {"properties": {"evidence_imported": {"const": true}, "immutable_evidence": {"const": true}, "deployment_bound": {"const": true}, "cleanup_verified": {"const": true}}}, "blockers": {"maxItems": 0}}}},
+    {"if": {"properties": {"result": {"const": "CAPTURE_INCONCLUSIVE"}}, "required": ["result"]}, "then": {"properties": {"capture_validity": {"properties": {"valid": {"const": false}, "reason_codes": {"minItems": 1}}}, "hypothesis_updates": {"maxItems": 0}}}},
+    {"if": {"properties": {"result": {"const": "BLOCKED"}}, "required": ["result"]}, "then": {"properties": {"blockers": {"minItems": 1}}}}
+  ]
+}

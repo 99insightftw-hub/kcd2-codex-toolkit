@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/external-video-markers-v1.schema.json",
+  "title": "KCD2 external video marker interchange v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "session_id", "clock_id", "enabled", "recording_control", "video_retention", "markers"],
+  "properties": {
+    "schema_version": {"const": "kcd2.external-video-markers.v1"},
+    "session_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "clock_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "enabled": {"type": "boolean", "default": false},
+    "recording_control": {"const": "NONE"},
+    "video_retention": {"const": "NONE"},
+    "markers": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["marker_id", "timestamp_ns", "uncertainty_ns"],
+        "properties": {
+          "marker_id": {"type": "string", "minLength": 1, "maxLength": 256},
+          "timestamp_ns": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807},
+          "uncertainty_ns": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807}
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"enabled": {"const": false}}, "required": ["enabled"]},
+      "then": {"properties": {"markers": {"maxItems": 0}}}
+    }
+  ]
+}

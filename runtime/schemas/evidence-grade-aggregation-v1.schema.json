@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/evidence-grade-aggregation-v1.schema.json",
+  "title": "KCD2 evidence-grade aggregation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "aggregation", "reported_grade", "children", "reason"],
+  "properties": {
+    "schema_version": {"const": "kcd2.evidence-grade-aggregation.v1"},
+    "aggregation": {"enum": ["exact", "minimum", "mixed", "not_applicable", "unknown_with_reason"]},
+    "reported_grade": {"anyOf": [{"type": "null"}, {"enum": ["E0", "E1", "E2", "E3", "E4", "E5", "E6"]}]},
+    "children": {
+      "type": "array", "maxItems": 10000,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["evidence_id", "grade", "scope"],
+        "properties": {
+          "evidence_id": {"type": "string", "minLength": 1, "maxLength": 512},
+          "grade": {"enum": ["E0", "E1", "E2", "E3", "E4", "E5", "E6", "unknown"]},
+          "scope": {"type": "string", "minLength": 1, "maxLength": 512}
+        }
+      }
+    },
+    "reason": {"type": "string", "minLength": 1, "maxLength": 4000},
+    "boundary": {"type": ["string", "null"], "maxLength": 2000}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"aggregation": {"enum": ["exact", "minimum"]}},
+        "required": ["aggregation"]
+      },
+      "then": {
+        "properties": {
+          "reported_grade": {"enum": ["E0", "E1", "E2", "E3", "E4", "E5", "E6"]},
+          "children": {"minItems": 1}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"aggregation": {"const": "mixed"}},
+        "required": ["aggregation"]
+      },
+      "then": {
+        "properties": {
+          "reported_grade": {"const": null},
+          "children": {"minItems": 2}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"aggregation": {"const": "not_applicable"}},
+        "required": ["aggregation"]
+      },
+      "then": {
+        "properties": {
+          "reported_grade": {"const": null},
+          "children": {"maxItems": 0}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"aggregation": {"const": "unknown_with_reason"}},
+        "required": ["aggregation"]
+      },
+      "then": {
+        "properties": {"reported_grade": {"const": null}}
+      }
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kcd2.local/schemas/deterministic-preflight-packet-v1.schema.json",
+  "title": "KCD2 deterministic local preflight packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "packet_kind", "status", "task_id", "task_family", "generated_at",
+    "accepted_head", "accepted_tree", "backlog", "scheduler", "task", "dependency_evidence",
+    "task_manifest", "state_context", "predictions", "protected_live_reach", "authority"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.deterministic-preflight-packet.v1"},
+    "packet_kind": {"const": "accepted_local_repository_state"},
+    "status": {"const": "accepted_local"},
+    "task_id": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3}$"},
+    "task_family": {"type": "string", "pattern": "^[A-Z]+$"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "accepted_head": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "accepted_tree": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "backlog": {"type": "object"},
+    "scheduler": {"type": "object"},
+    "task": {"type": "object"},
+    "dependency_evidence": {"type": "array", "maxItems": 64},
+    "task_manifest": {"type": "object"},
+    "state_context": {"type": "object"},
+    "predictions": {"type": "object"},
+    "protected_live_reach": {"type": "object"},
+    "authority": {"type": "object"}
+  }
+}

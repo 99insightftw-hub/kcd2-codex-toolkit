@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/native-deployment-descriptor-v1.schema.json",
+  "title": "KCD2 native deployment descriptor v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "descriptor_id",
+    "target_mod_id",
+    "game_profile",
+    "components",
+    "descriptor_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.native-deployment-descriptor.v1"},
+    "descriptor_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "target_mod_id": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,200}$"},
+    "game_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "game_version",
+        "game_executable_path",
+        "game_executable_sha256",
+        "whgame_path",
+        "whgame_sha256"
+      ],
+      "properties": {
+        "game_version": {"type": "string", "minLength": 1, "maxLength": 128},
+        "game_executable_path": {"$ref": "#/$defs/exact_relative_path"},
+        "game_executable_sha256": {"$ref": "#/$defs/sha256"},
+        "whgame_path": {"$ref": "#/$defs/exact_relative_path"},
+        "whgame_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "components": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "component_id",
+          "purpose",
+          "install_path",
+          "rollback_path",
+          "sha256",
+          "pe_architecture",
+          "required_exports",
+          "import_constraints",
+          "kcse_api_version",
+          "lifecycle",
+          "log_ownership",
+          "cleanup_expectation"
+        ],
+        "properties": {
+          "component_id": {"type": "string", "pattern": "^[A-Za-z0-9_.:-]{1,256}$"},
+          "purpose": {"type": "string", "minLength": 1, "maxLength": 1024},
+          "install_path": {"$ref": "#/$defs/exact_relative_path"},
+          "rollback_path": {"$ref": "#/$defs/exact_relative_path"},
+          "sha256": {"$ref": "#/$defs/sha256"},
+          "pe_architecture": {"enum": ["x64", "x86", "not_applicable"]},
+          "required_exports": {
+            "type": "array",
+            "maxItems": 256,
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1, "maxLength": 512}
+          },
+          "import_constraints": {
+            "type": "array",
+            "maxItems": 256,
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1, "maxLength": 512}
+          },
+          "kcse_api_version": {
+            "type": ["string", "null"],
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "lifecycle": {
+            "enum": ["permanent", "diagnostic", "one_shot", "cleanup_required"]
+          },
+          "log_ownership": {
+            "type": "array",
+            "maxItems": 256,
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1, "maxLength": 512}
+          },
+          "cleanup_expectation": {
+            "enum": [
+              "none",
+              "remove_on_rollback",
+              "restore_prior_bytes",
+              "retain_by_policy"
+            ]
+          }
+        }
+      }
+    },
+    "descriptor_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9A-Fa-f]{64}$"},
+    "exact_relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*//)[A-Za-z0-9._() +@-]+(?:/[A-Za-z0-9._() +@-]+)*$"
+    }
+  }
+}

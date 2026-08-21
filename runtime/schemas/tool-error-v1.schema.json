@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/tool-error-v1.schema.json",
+  "title": "KCD2 tool error v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "error_id",
+    "code",
+    "category",
+    "message",
+    "recoverable",
+    "field",
+    "supplied_value",
+    "allowed_values",
+    "correlation_id"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.tool-error.v1"},
+    "error_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "code": {
+      "enum": [
+        "KCD2_INVALID_ARGUMENT",
+        "KCD2_LIMIT_OUT_OF_RANGE",
+        "KCD2_NOT_CONFIGURED",
+        "KCD2_NOT_FOUND",
+        "KCD2_SCOPE_BREACH",
+        "KCD2_COVERAGE_INCOMPLETE",
+        "KCD2_AUTHORIZATION_REQUIRED",
+        "KCD2_PROCESS_STATE_INVALID",
+        "KCD2_SOURCE_BLOCKER",
+        "KCD2_INTERNAL"
+      ]
+    },
+    "category": {
+      "enum": [
+        "invalid_argument",
+        "not_configured",
+        "not_found",
+        "scope_breach",
+        "coverage_incomplete",
+        "authorization",
+        "process_state",
+        "source_blocker",
+        "internal"
+      ]
+    },
+    "message": {"type": "string", "minLength": 1, "maxLength": 4000},
+    "recoverable": {"type": "boolean"},
+    "field": {
+      "anyOf": [
+        {"type": "null"},
+        {"type": "string", "minLength": 1, "maxLength": 256}
+      ]
+    },
+    "supplied_value": {"$ref": "#/$defs/json_value"},
+    "allowed_values": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {"$ref": "#/$defs/json_value"}
+    },
+    "correlation_id": {"type": "string", "minLength": 1, "maxLength": 256}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"code": {"enum": ["KCD2_INVALID_ARGUMENT", "KCD2_LIMIT_OUT_OF_RANGE"]}}},
+      "then": {"properties": {"category": {"const": "invalid_argument"}}}
+    },
+    {
+      "if": {"properties": {"code": {"const": "KCD2_NOT_CONFIGURED"}}},
+      "then": {"properties": {"category": {"const": "not_configured"}}}
+    },
+    {
+      "if": {"properties": {"code": {"const": "KCD2_NOT_FOUND"}}},
+      "then": {"properties": {"category": {"const": "not_found"}}}
+    },
+    {
+      "if": {"properties": {"code": {"const": "KCD2_SCOPE_BREACH"}}},
+      "then": {"properties": {"category": {"const": "scope_breach"}}}
+    },
+    {
+      "if": {"properties": {"code": {"const": "KCD2_COVERAGE_INCOMPLETE"}}},
+      "then": {"properties": {"category": {"const": "coverage_incomplete"}}}
+    },
+    {
+      "if": {"properties": {"code": {"const": "KCD2_AUTHORIZATION_REQUIRED"}}},
+      "then": {"properties": {"category": {"const": "authorization"}}}
+    },
+    {
+      "if": {"properties": {"code": {"const": "KCD2_PROCESS_STATE_INVALID"}}},
+      "then": {"properties": {"category": {"const": "process_state"}}}
+    },
+    {
+      "if": {"properties": {"code": {"const": "KCD2_SOURCE_BLOCKER"}}},
+      "then": {"properties": {"category": {"const": "source_blocker"}}}
+    },
+    {
+      "if": {"properties": {"code": {"const": "KCD2_INTERNAL"}}},
+      "then": {"properties": {"category": {"const": "internal"}}}
+    }
+  ],
+  "$defs": {
+    "json_value": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "boolean"},
+        {"type": "number"},
+        {"type": "string", "maxLength": 4096},
+        {
+          "type": "array",
+          "maxItems": 100,
+          "items": {"$ref": "#/$defs/json_value"}
+        },
+        {
+          "type": "object",
+          "maxProperties": 100,
+          "propertyNames": {"type": "string", "minLength": 1, "maxLength": 256},
+          "additionalProperties": {"$ref": "#/$defs/json_value"}
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/environment-doctor-v1.schema.json",
+  "title": "KCD2 environment doctor v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "profile_id", "compatibility_profile_id",
+    "discovery_collected_at", "catalog_observation", "process_observation",
+    "component_proofs", "drift_report", "route_eligibility", "mutation_performed"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.environment-doctor.v1"},
+    "profile_id": {"$ref": "#/$defs/text"},
+    "compatibility_profile_id": {"$ref": "#/$defs/text"},
+    "discovery_collected_at": {"type": "string", "format": "date-time", "maxLength": 64},
+    "catalog_observation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source", "status", "observed_at", "visible_tool_count", "tool_fingerprint"],
+      "properties": {
+        "source": {"const": "mcp_tools_list"},
+        "status": {"enum": ["complete", "partial", "unavailable"]},
+        "observed_at": {"type": "string", "format": "date-time", "maxLength": 64},
+        "visible_tool_count": {"type": "integer", "minimum": 0, "maximum": 256},
+        "tool_fingerprint": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "process_observation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["observed_at", "game_state", "debugger_state", "evidence"],
+      "properties": {
+        "observed_at": {"type": "string", "format": "date-time", "maxLength": 64},
+        "game_state": {"enum": ["not_running", "running", "unknown"]},
+        "debugger_state": {"enum": ["detached", "attached_running", "paused", "unknown"]},
+        "evidence": {"$ref": "#/$defs/text"}
+      }
+    },
+    "component_proofs": {
+      "type": "array", "minItems": 9, "maxItems": 64,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["component_id", "capability_level", "workflow_eligible", "passed_proofs"],
+        "properties": {
+          "component_id": {"$ref": "#/$defs/text"},
+          "capability_level": {"$ref": "#/$defs/text"},
+          "workflow_eligible": {"type": "boolean"},
+          "passed_proofs": {
+            "type": "array", "maxItems": 4,
+            "items": {"enum": ["launch", "provider", "catalog", "version_profile"]}
+          }
+        }
+      }
+    },
+    "drift_report": {
+      "type": "object", "additionalProperties": false,
+      "required": ["event_count", "blockers", "truncated"],
+      "properties": {
+        "event_count": {"type": "integer", "minimum": 0, "maximum": 512},
+        "blockers": {
+          "type": "array", "maxItems": 128,
+          "items": {"type": "string", "minLength": 1, "maxLength": 2048}
+        },
+        "truncated": {"type": "boolean"}
+      }
+    },
+    "route_eligibility": {
+      "type": "array", "maxItems": 64,
+      "items": {"$ref": "#/$defs/route"}
+    },
+    "mutation_performed": {"const": false}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 2048},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "texts": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/text"}},
+    "route": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "route_id", "eligible", "required_components", "optional_components",
+        "required_tools", "optional_tools", "blockers", "optional_gaps"
+      ],
+      "properties": {
+        "route_id": {"$ref": "#/$defs/text"},
+        "eligible": {"type": "boolean"},
+        "required_components": {"$ref": "#/$defs/texts"},
+        "optional_components": {"$ref": "#/$defs/texts"},
+        "required_tools": {"$ref": "#/$defs/texts"},
+        "optional_tools": {"$ref": "#/$defs/texts"},
+        "blockers": {"$ref": "#/$defs/texts"},
+        "optional_gaps": {"$ref": "#/$defs/texts"}
+      }
+    }
+  }
+}

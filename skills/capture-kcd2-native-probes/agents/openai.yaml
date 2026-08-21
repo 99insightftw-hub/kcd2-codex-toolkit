@@ -1,0 +1,4 @@
+interface:
+  display_name: "KCD2 Native Probes"
+  short_description: "Plan and validate bounded native probes"
+  default_prompt: "Use $capture-kcd2-native-probes to plan and validate a bounded KCD2 native probe."

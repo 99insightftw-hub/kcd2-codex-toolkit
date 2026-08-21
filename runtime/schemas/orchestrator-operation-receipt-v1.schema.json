@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/orchestrator-operation-receipt-v1.schema.json",
+  "title": "KCD2 orchestrator operation receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "receipt_id",
+    "investigation_id",
+    "operation",
+    "request_sha256",
+    "delegated_calls",
+    "result",
+    "identity_before_id",
+    "identity_after_id",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.orchestrator-operation-receipt.v1"},
+    "receipt_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "investigation_id": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "operation": {
+      "enum": [
+        "doctor",
+        "start_investigation",
+        "prepare_test",
+        "finish_test",
+        "status",
+        "recommend_next_action",
+        "inventory_projects",
+        "analyze_active_stack",
+        "compare_variants",
+        "prepare_candidate",
+        "release_check",
+        "rollback"
+      ]
+    },
+    "request_sha256": {"$ref": "#/$defs/sha256"},
+    "delegated_calls": {
+      "type": "array",
+      "maxItems": 128,
+      "items": {"$ref": "#/$defs/delegated_call"}
+    },
+    "result": {
+      "enum": ["PASS", "BLOCKED", "CAPTURE_INCONCLUSIVE", "NOT_APPLICABLE"]
+    },
+    "identity_before_id": {
+      "oneOf": [{"$ref": "#/$defs/identity_id"}, {"type": "null"}]
+    },
+    "identity_after_id": {
+      "oneOf": [{"$ref": "#/$defs/identity_id"}, {"type": "null"}]
+    },
+    "created_at": {"type": "string", "format": "date-time"},
+    "blockers": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {"type": "string", "minLength": 1, "maxLength": 512}
+    },
+    "detail_artifact_sha256": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "identity_id": {
+      "type": "string",
+      "pattern": "^identity:sha256:[0-9a-f]{64}$"
+    },
+    "delegated_call": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tool",
+        "tool_schema_revision",
+        "plugin_id",
+        "plugin_version",
+        "source_revision_sha256",
+        "request_sha256",
+        "response_sha256",
+        "identity_before_id",
+        "identity_after_id",
+        "result"
+      ],
+      "properties": {
+        "tool": {"type": "string", "minLength": 1, "maxLength": 256},
+        "tool_schema_revision": {"type": "string", "minLength": 1, "maxLength": 128},
+        "plugin_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "plugin_version": {"type": "string", "minLength": 1, "maxLength": 128},
+        "source_revision_sha256": {"$ref": "#/$defs/sha256"},
+        "request_sha256": {"$ref": "#/$defs/sha256"},
+        "response_sha256": {"$ref": "#/$defs/sha256"},
+        "identity_before_id": {
+          "oneOf": [{"$ref": "#/$defs/identity_id"}, {"type": "null"}]
+        },
+        "identity_after_id": {
+          "oneOf": [{"$ref": "#/$defs/identity_id"}, {"type": "null"}]
+        },
+        "result": {
+          "enum": ["PASS", "BLOCKED", "CAPTURE_INCONCLUSIVE", "NOT_APPLICABLE"]
+        },
+        "reason_codes": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 128}
+        }
+      }
+    }
+  }
+}

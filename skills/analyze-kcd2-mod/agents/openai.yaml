@@ -1,0 +1,4 @@
+interface:
+  display_name: "KCD2 Mod Analysis"
+  short_description: "Inspect bounded KCD2 mod state safely"
+  default_prompt: "Use $analyze-kcd2-mod to inspect this KCD2 mod without changing live state."

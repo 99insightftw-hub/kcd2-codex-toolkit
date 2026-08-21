@@ -1,0 +1,320 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/mod-provider-classification-v1.schema.json",
+  "title": "KCD2 mod provider classification v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "mod_id",
+    "state",
+    "classified_at",
+    "freshness_rules",
+    "local_check",
+    "workshop_check",
+    "coverage_complete",
+    "diagnostics"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.mod-provider-classification.v1"
+    },
+    "mod_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "state": {
+      "enum": [
+        "LOCAL_PRESENT",
+        "WORKSHOP_PRESENT",
+        "LOCAL_AND_WORKSHOP_PRESENT",
+        "POSSIBLY_WORKSHOP_MANAGED",
+        "MISSING_CONFIRMED",
+        "WORKSHOP_COVERAGE_STALE"
+      ]
+    },
+    "classified_at": {
+      "type": "string",
+      "format": "date-time",
+      "maxLength": 32
+    },
+    "freshness_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_catalog_age_seconds"
+      ],
+      "properties": {
+        "max_catalog_age_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2678400
+        }
+      }
+    },
+    "local_check": {
+      "$ref": "#/$defs/provider_check"
+    },
+    "workshop_check": {
+      "$ref": "#/$defs/provider_check"
+    },
+    "coverage_complete": {
+      "type": "boolean"
+    },
+    "diagnostics": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      }
+    }
+  },
+  "$defs": {
+    "provider_check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "checked",
+        "fresh",
+        "exhaustive",
+        "present",
+        "paths",
+        "catalog_id",
+        "catalog_captured_at",
+        "catalog_age_seconds",
+        "configured_roots",
+        "covered_roots",
+        "limit_reached"
+      ],
+      "properties": {
+        "checked": {
+          "type": "boolean"
+        },
+        "fresh": {
+          "type": "boolean"
+        },
+        "exhaustive": {
+          "type": "boolean"
+        },
+        "present": {
+          "type": "boolean"
+        },
+        "paths": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "catalog_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "catalog_captured_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "maxLength": 32
+        },
+        "catalog_age_seconds": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 315537897600
+        },
+        "configured_roots": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "covered_roots": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "limit_reached": {
+          "type": "boolean"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "present": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "paths": {
+                "minItems": 1
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "paths": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "fresh": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "checked": {
+                "const": true
+              },
+              "catalog_id": {
+                "type": "string"
+              },
+              "catalog_captured_at": {
+                "type": "string"
+              },
+              "catalog_age_seconds": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "exhaustive": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "checked": {
+                "const": true
+              },
+              "configured_roots": {
+                "minItems": 1
+              },
+              "covered_roots": {
+                "minItems": 1
+              },
+              "limit_reached": {
+                "const": false
+              }
+            }
+          }
+        }
+      ]
+    },
+    "confirmed_absence_check": {
+      "properties": {
+        "checked": {
+          "const": true
+        },
+        "fresh": {
+          "const": true
+        },
+        "exhaustive": {
+          "const": true
+        },
+        "present": {
+          "const": false
+        },
+        "limit_reached": {
+          "const": false
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "MISSING_CONFIRMED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "coverage_complete": {
+            "const": true
+          },
+          "local_check": {
+            "$ref": "#/$defs/confirmed_absence_check"
+          },
+          "workshop_check": {
+            "$ref": "#/$defs/confirmed_absence_check"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "WORKSHOP_COVERAGE_STALE"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "coverage_complete": {
+            "const": false
+          },
+          "local_check": {
+            "properties": {
+              "present": {
+                "const": false
+              }
+            }
+          },
+          "workshop_check": {
+            "properties": {
+              "checked": {
+                "const": true
+              },
+              "fresh": {
+                "const": false
+              },
+              "present": {
+                "const": false
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$comment": "IDX-008 finalizes the pre-implementation draft. The migration rationale is documented in docs/schema-migrations/IDX-008-mod-provider-classification-v1.md."
+}

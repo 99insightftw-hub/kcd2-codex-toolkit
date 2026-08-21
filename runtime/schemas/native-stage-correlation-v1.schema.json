@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/native-stage-correlation-v1.schema.json",
+  "title": "KCD2 native-stage correlation validity contract v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "module_sha256", "correlations"],
+  "properties": {
+    "schema_version": {"const": "kcd2.native-stage-correlation.v1"},
+    "module_sha256": {"$ref": "#/$defs/sha256"},
+    "correlations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {"$ref": "#/$defs/correlation"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+    "rva": {"type": "string", "pattern": "^0x[A-Fa-f0-9]+$"},
+    "bounded_name": {"type": "string", "minLength": 1, "maxLength": 128},
+    "stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage_id", "hook_id"],
+      "properties": {
+        "stage_id": {"$ref": "#/$defs/bounded_name"},
+        "hook_id": {"$ref": "#/$defs/bounded_name"}
+      }
+    },
+    "citation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_class", "artifact", "module_sha256", "locator", "claim"],
+      "properties": {
+        "evidence_class": {"enum": ["static", "runtime"]},
+        "artifact": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "module_sha256": {"$ref": "#/$defs/sha256"},
+        "locator": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "claim": {"type": "string", "minLength": 1, "maxLength": 2000}
+      }
+    },
+    "citations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "items": {"$ref": "#/$defs/citation"}
+    },
+    "observations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["same_thread", "same_pointer", "tls_storage"],
+      "properties": {
+        "same_thread": {"type": "boolean"},
+        "same_pointer": {"type": "boolean"},
+        "tls_storage": {"type": "boolean"}
+      }
+    },
+    "owner_function": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "module_sha256", "function_rva", "owns_query", "owns_output", "static_evidence"
+      ],
+      "properties": {
+        "module_sha256": {"$ref": "#/$defs/sha256"},
+        "function_rva": {"$ref": "#/$defs/rva"},
+        "owns_query": {"type": "boolean"},
+        "owns_output": {"type": "boolean"},
+        "static_evidence": {"$ref": "#/$defs/citations"}
+      }
+    },
+    "caller_return_lock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lock_kind", "module_sha256", "lock_rva", "static_evidence"],
+      "properties": {
+        "lock_kind": {"enum": ["exact_caller_rva", "exact_return_rva"]},
+        "module_sha256": {"$ref": "#/$defs/sha256"},
+        "lock_rva": {"$ref": "#/$defs/rva"},
+        "static_evidence": {"$ref": "#/$defs/citations"}
+      }
+    },
+    "lifetime_proof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["storage", "lifetime_evidence", "routing_evidence"],
+      "properties": {
+        "storage": {"enum": ["object", "tls"]},
+        "lifetime_evidence": {"$ref": "#/$defs/citations"},
+        "routing_evidence": {"$ref": "#/$defs/citations"}
+      }
+    },
+    "x64dbg_proof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "session_id", "module_sha256", "source_checkpoint", "target_checkpoint",
+        "maximum_breakpoints", "maximum_events", "thread_identity_proven",
+        "pointer_lifetime_proven", "arguments_proven", "call_stack_proven",
+        "runtime_evidence"
+      ],
+      "properties": {
+        "session_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "module_sha256": {"$ref": "#/$defs/sha256"},
+        "source_checkpoint": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]{1,128}\\+0x[A-Fa-f0-9]+$"
+        },
+        "target_checkpoint": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]{1,128}\\+0x[A-Fa-f0-9]+$"
+        },
+        "maximum_breakpoints": {"type": "integer", "minimum": 1, "maximum": 16},
+        "maximum_events": {"type": "integer", "minimum": 1, "maximum": 10000},
+        "thread_identity_proven": {"type": "boolean"},
+        "pointer_lifetime_proven": {"type": "boolean"},
+        "arguments_proven": {"type": "boolean"},
+        "call_stack_proven": {"type": "boolean"},
+        "runtime_evidence": {"$ref": "#/$defs/citations"}
+      }
+    },
+    "correlation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "correlation_id", "source_stage", "target_stage", "strategy", "observations",
+        "owner_function", "caller_return_lock", "lifetime_proof", "x64dbg_proof"
+      ],
+      "properties": {
+        "correlation_id": {"$ref": "#/$defs/bounded_name"},
+        "source_stage": {"$ref": "#/$defs/stage"},
+        "target_stage": {"$ref": "#/$defs/stage"},
+        "strategy": {
+          "enum": [
+            "same_owner_function", "exact_caller_return", "same_object_lifetime_proven",
+            "tls_lifetime_proven", "bounded_x64dbg_proof"
+          ]
+        },
+        "observations": {"$ref": "#/$defs/observations"},
+        "owner_function": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/owner_function"}]
+        },
+        "caller_return_lock": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/caller_return_lock"}]
+        },
+        "lifetime_proof": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/lifetime_proof"}]
+        },
+        "x64dbg_proof": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/x64dbg_proof"}]
+        }
+      }
+    }
+  }
+}

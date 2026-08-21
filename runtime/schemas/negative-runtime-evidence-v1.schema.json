@@ -1,0 +1,361 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/negative-runtime-evidence-v1.schema.json",
+  "title": "KCD2 meaningful negative runtime evidence report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "observation_id",
+    "session_id",
+    "probe_id",
+    "verdict",
+    "claim",
+    "reason_codes",
+    "technical_evidence",
+    "control_linkage",
+    "user_visual_evidence",
+    "summary"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.negative-runtime-evidence.v1"},
+    "observation_id": {"$ref": "#/$defs/text"},
+    "session_id": {"$ref": "#/$defs/text"},
+    "probe_id": {"$ref": "#/$defs/text"},
+    "verdict": {
+      "enum": [
+        "positive_observation",
+        "confirmed_missing_in_covered_scope",
+        "capture_inconclusive"
+      ]
+    },
+    "claim": {
+      "enum": ["target_event_observed", "target_event_not_observed", null]
+    },
+    "reason_codes": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[A-Z0-9_]+$", "maxLength": 128}
+    },
+    "technical_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "user_action",
+        "target_observation",
+        "validity",
+        "negative_capture_audit"
+      ],
+      "properties": {
+        "user_action": {"$ref": "#/$defs/user_action"},
+        "target_observation": {"$ref": "#/$defs/target_observation"},
+        "validity": {"$ref": "#/$defs/validity"},
+        "negative_capture_audit": {"$ref": "#/$defs/negative_capture_audit"}
+      }
+    },
+    "control_linkage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["positive_control", "negative_control"],
+      "properties": {
+        "positive_control": {
+          "anyOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/positive_control"}
+          ]
+        },
+        "negative_control": {
+          "anyOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/negative_control"}
+          ]
+        }
+      }
+    },
+    "user_visual_evidence": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {"$ref": "#/$defs/visual_evidence"}
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_event_count",
+        "validity_gate_count",
+        "validity_gates_passed",
+        "visual_evidence_count"
+      ],
+      "properties": {
+        "target_event_count": {"$ref": "#/$defs/count"},
+        "validity_gate_count": {"const": 5},
+        "validity_gates_passed": {"type": "integer", "minimum": 0, "maximum": 5},
+        "visual_evidence_count": {"type": "integer", "minimum": 0, "maximum": 256}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"verdict": {"const": "confirmed_missing_in_covered_scope"}},
+        "required": ["verdict"]
+      },
+      "then": {
+        "properties": {
+          "claim": {"const": "target_event_not_observed"},
+          "reason_codes": {"maxItems": 0},
+          "technical_evidence": {
+            "properties": {
+              "target_observation": {
+                "properties": {"event_count": {"const": 0}}
+              },
+              "validity": {
+                "properties": {
+                  "probe_healthy": {"const": true},
+                  "identity_filter_valid": {"const": true},
+                  "bounds_unsaturated": {"const": true},
+                  "capture_complete": {"const": true},
+                  "correlation_valid": {"const": true}
+                }
+              }
+            }
+          },
+          "control_linkage": {
+            "properties": {
+              "positive_control": {"$ref": "#/$defs/positive_control"},
+              "negative_control": {"$ref": "#/$defs/negative_control"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"verdict": {"const": "capture_inconclusive"}},
+        "required": ["verdict"]
+      },
+      "then": {
+        "properties": {
+          "claim": {"const": null},
+          "reason_codes": {"minItems": 1}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 512},
+    "count": {"type": "integer", "minimum": 0, "maximum": 100000},
+    "monotonic_ns": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807},
+    "references": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/text"}
+    },
+    "user_action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action_id",
+        "action_name",
+        "start_monotonic_ns",
+        "end_monotonic_ns",
+        "reproduced",
+        "evidence_refs"
+      ],
+      "properties": {
+        "action_id": {"$ref": "#/$defs/text"},
+        "action_name": {"$ref": "#/$defs/text"},
+        "start_monotonic_ns": {"$ref": "#/$defs/monotonic_ns"},
+        "end_monotonic_ns": {"$ref": "#/$defs/monotonic_ns"},
+        "reproduced": {"type": "boolean"},
+        "evidence_refs": {"$ref": "#/$defs/references"}
+      }
+    },
+    "target_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_name",
+        "action_id",
+        "window_start_monotonic_ns",
+        "window_end_monotonic_ns",
+        "event_count",
+        "evidence_refs"
+      ],
+      "properties": {
+        "event_name": {"$ref": "#/$defs/text"},
+        "action_id": {"$ref": "#/$defs/text"},
+        "window_start_monotonic_ns": {"$ref": "#/$defs/monotonic_ns"},
+        "window_end_monotonic_ns": {"$ref": "#/$defs/monotonic_ns"},
+        "event_count": {"$ref": "#/$defs/count"},
+        "evidence_refs": {"$ref": "#/$defs/references"}
+      }
+    },
+    "validity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "probe_healthy",
+        "identity_filter_valid",
+        "bounds_unsaturated",
+        "capture_complete",
+        "correlation_valid"
+      ],
+      "properties": {
+        "probe_healthy": {"type": "boolean"},
+        "identity_filter_valid": {"type": "boolean"},
+        "bounds_unsaturated": {"type": "boolean"},
+        "capture_complete": {"type": "boolean"},
+        "correlation_valid": {"type": "boolean"}
+      }
+    },
+    "negative_capture_audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "probe_id",
+        "session_id",
+        "checks",
+        "event_family_saturation",
+        "verdict",
+        "reasons",
+        "permitted_runtime_claims"
+      ],
+      "properties": {
+        "schema_version": {"const": "kcd2.probe-result-validity.v1"},
+        "probe_id": {"$ref": "#/$defs/text"},
+        "session_id": {"$ref": "#/$defs/text"},
+        "checks": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "boot_ok",
+            "install_ok",
+            "game_fingerprint_match",
+            "deployment_binding_exact",
+            "module_base_emitted",
+            "unfiltered_queries_observed",
+            "record_layout_valid",
+            "identity_filter_valid",
+            "positive_control_or_population",
+            "log_complete",
+            "no_dropped_events",
+            "user_state_confirmed",
+            "correlation_contract_valid"
+          ],
+          "properties": {
+            "boot_ok": {"type": "boolean"},
+            "install_ok": {"type": "boolean"},
+            "game_fingerprint_match": {"type": "boolean"},
+            "deployment_binding_exact": {"type": "boolean"},
+            "module_base_emitted": {"type": "boolean"},
+            "unfiltered_queries_observed": {"type": "boolean"},
+            "record_layout_valid": {"type": "boolean"},
+            "identity_filter_valid": {"type": "boolean"},
+            "positive_control_or_population": {"type": "boolean"},
+            "log_complete": {"type": "boolean"},
+            "no_dropped_events": {"type": "boolean"},
+            "user_state_confirmed": {"type": "boolean"},
+            "correlation_contract_valid": {"type": "boolean"}
+          }
+        },
+        "event_family_saturation": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 128,
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["observed", "limit", "reached"],
+            "properties": {
+              "observed": {"$ref": "#/$defs/count"},
+              "limit": {"type": "integer", "minimum": 1, "maximum": 100000},
+              "reached": {"type": "boolean"}
+            }
+          }
+        },
+        "verdict": {
+          "enum": [
+            "positive_observation",
+            "confirmed_negative_in_covered_scope",
+            "capture_inconclusive",
+            "not_evaluated"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {"type": "string", "minLength": 1, "maxLength": 2000}
+        },
+        "permitted_runtime_claims": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {"type": "string", "minLength": 1, "maxLength": 128}
+        },
+        "audit_evidence_refs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 512,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 512}
+        }
+      }
+    },
+    "control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "control_id",
+        "role",
+        "action_id",
+        "event_name",
+        "event_count",
+        "evidence_refs"
+      ],
+      "properties": {
+        "control_id": {"$ref": "#/$defs/text"},
+        "role": {"enum": ["positive", "negative"]},
+        "action_id": {"$ref": "#/$defs/text"},
+        "event_name": {"$ref": "#/$defs/text"},
+        "event_count": {"$ref": "#/$defs/count"},
+        "evidence_refs": {"$ref": "#/$defs/references"}
+      }
+    },
+    "positive_control": {
+      "allOf": [
+        {"$ref": "#/$defs/control"},
+        {
+          "properties": {
+            "role": {"const": "positive"},
+            "event_count": {"minimum": 1}
+          }
+        }
+      ]
+    },
+    "negative_control": {
+      "allOf": [
+        {"$ref": "#/$defs/control"},
+        {
+          "properties": {
+            "role": {"const": "negative"},
+            "event_count": {"const": 0}
+          }
+        }
+      ]
+    },
+    "visual_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_id", "state", "evidence_refs"],
+      "properties": {
+        "evidence_id": {"$ref": "#/$defs/text"},
+        "state": {"$ref": "#/$defs/text"},
+        "evidence_refs": {"$ref": "#/$defs/references"}
+      }
+    }
+  }
+}

@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/animation-haptic-stack-acceptance-v1.schema.json",
+  "title": "KCD2 animation, audio, and haptic stack acceptance v1",
+  "description": "COMPAT-006 deterministic composition receipt. Static, runtime, and causal evidence remain distinct; incomplete runtime evidence is inconclusive.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "acceptance_id",
+    "stack_id",
+    "active_snapshot_id",
+    "runtime_session_id",
+    "status",
+    "evidence_layers",
+    "gates",
+    "summary",
+    "animation_routes",
+    "audio_haptic",
+    "component_receipts",
+    "reason_codes"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.animation-haptic-stack-acceptance.v1"},
+    "acceptance_id": {"$ref": "#/$defs/text"},
+    "stack_id": {
+      "type": "string",
+      "pattern": "^compatibility-stack:sha256:[0-9a-f]{64}$"
+    },
+    "active_snapshot_id": {
+      "type": "string",
+      "pattern": "^active-snapshot:sha256:[0-9a-f]{64}$"
+    },
+    "runtime_session_id": {
+      "type": "string",
+      "pattern": "^runtime-session:sha256:[0-9a-f]{64}$"
+    },
+    "status": {"enum": ["PASS", "FAIL", "INCONCLUSIVE"]},
+    "evidence_layers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["static", "runtime", "causal"],
+      "properties": {
+        "static": {"const": true},
+        "runtime": {"const": true},
+        "causal": {"const": false}
+      }
+    },
+    "gates": {
+      "type": "array",
+      "minItems": 11,
+      "maxItems": 11,
+      "items": {"$ref": "#/$defs/gate"}
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_binding_count",
+        "animation_route_count",
+        "scope_leak_count",
+        "non_terminating_route_count"
+      ],
+      "properties": {
+        "provider_binding_count": {"$ref": "#/$defs/count"},
+        "animation_route_count": {"$ref": "#/$defs/count"},
+        "scope_leak_count": {"$ref": "#/$defs/count"},
+        "non_terminating_route_count": {"$ref": "#/$defs/count"}
+      }
+    },
+    "animation_routes": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {"$ref": "#/$defs/animationRoute"}
+    },
+    "audio_haptic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "route_id",
+        "configuration_id",
+        "controller_id",
+        "controller_type",
+        "fallback_observed",
+        "haptics_behavior",
+        "safety_gate"
+      ],
+      "properties": {
+        "route_id": {"$ref": "#/$defs/nullableText"},
+        "configuration_id": {"$ref": "#/$defs/nullableText"},
+        "controller_id": {"$ref": "#/$defs/nullableText"},
+        "controller_type": {"$ref": "#/$defs/text"},
+        "fallback_observed": {"type": "boolean"},
+        "haptics_behavior": {"enum": ["preserved", "unresolved"]},
+        "safety_gate": {"$ref": "#/$defs/safetyGate"}
+      }
+    },
+    "component_receipts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "combat_route_lint_sha256",
+        "audio_route_graph_sha256",
+        "audio_runtime_sha256"
+      ],
+      "properties": {
+        "combat_route_lint_sha256": {"$ref": "#/$defs/sha256"},
+        "audio_route_graph_sha256": {"$ref": "#/$defs/sha256"},
+        "audio_runtime_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "reason_codes": {
+      "type": "array",
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[A-Z0-9_]+$", "maxLength": 128}
+    }
+  },
+  "$defs": {
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "pattern": "^[^\\u0000]+$"
+    },
+    "nullableText": {
+      "anyOf": [{"type": "null"}, {"$ref": "#/$defs/text"}]
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "count": {"type": "integer", "minimum": 0, "maximum": 4096},
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gate_id", "status", "evidence_layer", "evidence_refs"],
+      "properties": {
+        "gate_id": {
+          "enum": [
+            "selected_variant_binding",
+            "provider_winner_binding",
+            "animation_route_coverage",
+            "role_compatibility",
+            "animevent_event_routes",
+            "configuration_and_identity",
+            "scope_isolation",
+            "finite_exit",
+            "controller_behavior",
+            "fallback_behavior",
+            "haptics_preservation"
+          ]
+        },
+        "status": {"enum": ["PASS", "FAIL", "INCONCLUSIVE"]},
+        "evidence_layer": {"enum": ["static", "runtime"]},
+        "evidence_refs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4096,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/text"}
+        }
+      }
+    },
+    "animationRoute": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "route_id",
+        "adb_path",
+        "fragment_id",
+        "animevent",
+        "provider_id",
+        "source_role",
+        "target_role"
+      ],
+      "properties": {
+        "route_id": {"$ref": "#/$defs/text"},
+        "adb_path": {"$ref": "#/$defs/text"},
+        "fragment_id": {"$ref": "#/$defs/text"},
+        "animevent": {"$ref": "#/$defs/text"},
+        "provider_id": {"$ref": "#/$defs/text"},
+        "source_role": {"enum": ["master", "slave"]},
+        "target_role": {"enum": ["master", "slave"]}
+      }
+    },
+    "safetyGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "passive",
+        "action_map_unchanged",
+        "input_not_synthesized",
+        "input_not_consumed",
+        "no_control_output"
+      ],
+      "properties": {
+        "passive": {"const": true},
+        "action_map_unchanged": {"const": true},
+        "input_not_synthesized": {"const": true},
+        "input_not_consumed": {"const": true},
+        "no_control_output": {"const": true}
+      }
+    }
+  }
+}

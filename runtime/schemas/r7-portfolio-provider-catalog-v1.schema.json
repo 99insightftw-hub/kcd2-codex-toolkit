@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local/kcd2/schemas/r7-portfolio-provider-catalog-v1.schema.json",
+  "title": "KCD2 REL-607 portfolio provider catalog v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_id",
+    "classification",
+    "providers",
+    "provider_count",
+    "combat_native_provider_count",
+    "source_blockers",
+    "live_installed_visibility"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "kcd2.r7-portfolio-provider-catalog.v1"
+    },
+    "task_id": {"type": "string", "const": "REL-607"},
+    "classification": {"type": "string", "const": "non_live"},
+    "providers": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "provider_id",
+          "domains",
+          "component_package_roles",
+          "source_records",
+          "source_revision_sha256",
+          "visibility_state",
+          "blocked_reasons"
+        ],
+        "properties": {
+          "provider_id": {
+            "type": "string",
+            "maxLength": 256,
+            "pattern": "^provider:[a-z-]+$"
+          },
+          "domains": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 8,
+            "uniqueItems": true,
+            "items": {"type": "string", "maxLength": 128, "pattern": "^[a-z_]+$"}
+          },
+          "component_package_roles": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 7,
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1, "maxLength": 128}
+          },
+          "source_records": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 64,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path", "sha256"],
+              "properties": {
+                "path": {"type": "string", "minLength": 1, "maxLength": 1024},
+                "sha256": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
+            }
+          },
+          "source_revision_sha256": {
+            "type": "string",
+            "maxLength": 64,
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "visibility_state": {
+            "type": "string",
+            "enum": ["STAGED_SOURCE_VISIBLE", "SOURCE_BLOCKED"]
+          },
+          "blocked_reasons": {
+            "type": "array",
+            "maxItems": 32,
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1, "maxLength": 512}
+          }
+        }
+      }
+    },
+    "provider_count": {"type": "integer", "minimum": 8, "maximum": 8},
+    "combat_native_provider_count": {"type": "integer", "minimum": 1, "maximum": 1},
+    "source_blockers": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 512}
+    },
+    "live_installed_visibility": {
+      "type": "string",
+      "const": "NOT_RUN_NO_INSTALLATION"
+    }
+  }
+}

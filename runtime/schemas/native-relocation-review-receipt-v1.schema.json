@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/native-relocation-review-receipt-v1.schema.json",
+  "title": "KCD2 provisional native relocation review receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "receipt_id", "reviewed_at", "reviewed_by", "comparison_id",
+    "comparison_sha256", "source_module", "target_module", "decisions", "promotion"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.native-relocation-review-receipt.v1"},
+    "receipt_id": {"$ref": "#/$defs/id"},
+    "reviewed_at": {"$ref": "#/$defs/date_time"},
+    "reviewed_by": {"type": "string", "minLength": 1, "maxLength": 256},
+    "comparison_id": {"$ref": "#/$defs/id"},
+    "comparison_sha256": {"$ref": "#/$defs/sha256"},
+    "source_module": {"$ref": "#/$defs/module"},
+    "target_module": {"$ref": "#/$defs/module"},
+    "decisions": {
+      "type": "array", "maxItems": 10000, "items": {"$ref": "#/$defs/decision"}
+    },
+    "promotion": {"$ref": "#/$defs/promotion"}
+  },
+  "$defs": {
+    "id": {
+      "type": "string", "minLength": 1, "maxLength": 256,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "date_time": {"type": "string", "format": "date-time", "maxLength": 64},
+    "text": {"type": "string", "minLength": 1, "maxLength": 512},
+    "module": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "sha256", "timestamp", "image_size"],
+      "properties": {
+        "name": {"$ref": "#/$defs/text"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "timestamp": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "image_size": {"type": "integer", "minimum": 1, "maximum": 4294967295}
+      }
+    },
+    "interpretation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["registry_entry_id", "status", "semantic_name"],
+      "properties": {
+        "registry_entry_id": {"$ref": "#/$defs/id"},
+        "status": {
+          "enum": [
+            "PROPOSED", "STATICALLY_SUPPORTED", "RUNTIME_SUPPORTED", "CONFIRMED",
+            "SUPERSEDED", "REJECTED"
+          ]
+        },
+        "semantic_name": {"$ref": "#/$defs/text"}
+      }
+    },
+    "decision": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "source_function_id", "source_rva", "source_interpretations", "rationale", "status"
+      ],
+      "properties": {
+        "source_function_id": {"$ref": "#/$defs/id"},
+        "source_rva": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "source_interpretations": {
+          "type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/interpretation"}
+        },
+        "rationale": {"type": "string", "minLength": 1, "maxLength": 8192},
+        "status": {"enum": ["ACCEPTED_PROVISIONAL", "DEFERRED", "REJECTED"]},
+        "target_function_id": {"$ref": "#/$defs/id"},
+        "target_rva": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "candidate_fingerprint_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "ACCEPTED_PROVISIONAL"}}},
+          "then": {
+            "required": [
+              "target_function_id", "target_rva", "candidate_fingerprint_sha256"
+            ]
+          },
+          "else": {
+            "not": {
+              "anyOf": [
+                {"required": ["target_function_id"]},
+                {"required": ["target_rva"]},
+                {"required": ["candidate_fingerprint_sha256"]}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "promotion": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "registry_write_performed", "next_step"],
+      "properties": {
+        "status": {"const": "NOT_PROMOTED"},
+        "registry_write_performed": {"const": false},
+        "next_step": {
+          "const": "separate reviewed native-registry PROPOSED import required"
+        }
+      }
+    }
+  }
+}

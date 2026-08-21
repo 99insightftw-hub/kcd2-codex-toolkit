@@ -1,0 +1,461 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/inventory-preset-resolution-v1.schema.json",
+  "title": "KCD2 InventoryPreset resolution v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "resolution_id",
+    "root_preset",
+    "snapshot_id",
+    "coverage_id",
+    "input_mode",
+    "entry_point",
+    "nodes",
+    "edges",
+    "cycles",
+    "item_outcomes",
+    "reason_codes",
+    "limits",
+    "complete"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.inventory-preset-resolution.v1"
+    },
+    "resolution_id": {
+      "$ref": "#/$defs/text"
+    },
+    "root_preset": {
+      "$ref": "#/$defs/text"
+    },
+    "snapshot_id": {
+      "$ref": "#/$defs/text"
+    },
+    "coverage_id": {
+      "$ref": "#/$defs/text"
+    },
+    "input_mode": {
+      "const": "integrated"
+    },
+    "entry_point": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "identity",
+        "provenance"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "merchant",
+            "npc",
+            "container",
+            "shop"
+          ]
+        },
+        "identity": {
+          "$ref": "#/$defs/text"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "$ref": "#/$defs/node"
+      }
+    },
+    "edges": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "$ref": "#/$defs/edge"
+      }
+    },
+    "cycles": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 129,
+        "items": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "item_outcomes": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "$ref": "#/$defs/item_outcome"
+      }
+    },
+    "reason_codes": {
+      "$ref": "#/$defs/reason_codes"
+    },
+    "limits": {
+      "$ref": "#/$defs/limits"
+    },
+    "complete": {
+      "type": "boolean"
+    }
+  },
+  "$defs": {
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "nullable_number": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1000000000000
+    },
+    "reason_codes": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/text"
+      }
+    },
+    "record_key": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "value": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_id",
+        "provider_kind",
+        "load_order_index",
+        "source_path",
+        "member_or_loose_path",
+        "content_sha256",
+        "game_build",
+        "source_build"
+      ],
+      "properties": {
+        "provider_id": {
+          "$ref": "#/$defs/text"
+        },
+        "provider_kind": {
+          "$ref": "#/$defs/text"
+        },
+        "load_order_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "source_path": {
+          "$ref": "#/$defs/text"
+        },
+        "member_or_loose_path": {
+          "$ref": "#/$defs/text"
+        },
+        "content_sha256": {
+          "type": "string",
+          "pattern": "^[0-9A-Fa-f]{64}$"
+        },
+        "game_build": {
+          "$ref": "#/$defs/text"
+        },
+        "source_build": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_id",
+        "canonical_path",
+        "record_key",
+        "sources"
+      ],
+      "properties": {
+        "profile_id": {
+          "$ref": "#/$defs/text"
+        },
+        "canonical_path": {
+          "$ref": "#/$defs/text"
+        },
+        "record_key": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/record_key"
+          }
+        },
+        "sources": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": {
+            "$ref": "#/$defs/source"
+          }
+        }
+      }
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node_id",
+        "preset_name",
+        "provider_id",
+        "contributing_provider_ids",
+        "path_instance",
+        "status",
+        "provenance"
+      ],
+      "properties": {
+        "node_id": {
+          "$ref": "#/$defs/text"
+        },
+        "preset_name": {
+          "$ref": "#/$defs/text"
+        },
+        "provider_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "contributing_provider_ids": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "path_instance": {
+          "$ref": "#/$defs/text"
+        },
+        "status": {
+          "enum": [
+            "resolved",
+            "missing",
+            "cycle",
+            "unresolved"
+          ]
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "from",
+        "to",
+        "kind",
+        "path_instance",
+        "ordinal"
+      ],
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/text"
+        },
+        "to": {
+          "$ref": "#/$defs/text"
+        },
+        "kind": {
+          "enum": [
+            "reference",
+            "item"
+          ]
+        },
+        "path_instance": {
+          "$ref": "#/$defs/text"
+        },
+        "ordinal": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9999
+        }
+      }
+    },
+    "restriction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minimum_combat_level",
+        "maximum_combat_level",
+        "evaluated_combat_level",
+        "state"
+      ],
+      "properties": {
+        "minimum_combat_level": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "maximum_combat_level": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "evaluated_combat_level": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "state": {
+          "enum": [
+            "not_applicable",
+            "not_evaluated",
+            "eligible",
+            "excluded",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "item_outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "outcome_id",
+        "source_node_id",
+        "path_instance",
+        "item_name",
+        "quantity_min",
+        "quantity_max",
+        "quantity_semantics",
+        "selection_probability",
+        "selection_weight",
+        "probability_semantics",
+        "restriction",
+        "health",
+        "semantics_complete",
+        "reason_codes",
+        "provenance"
+      ],
+      "properties": {
+        "outcome_id": {
+          "$ref": "#/$defs/text"
+        },
+        "source_node_id": {
+          "$ref": "#/$defs/text"
+        },
+        "path_instance": {
+          "$ref": "#/$defs/text"
+        },
+        "item_name": {
+          "$ref": "#/$defs/text"
+        },
+        "quantity_min": {
+          "$ref": "#/$defs/nullable_number"
+        },
+        "quantity_max": {
+          "$ref": "#/$defs/nullable_number"
+        },
+        "quantity_semantics": {
+          "enum": [
+            "exact",
+            "plus_or_minus",
+            "unknown"
+          ]
+        },
+        "selection_probability": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "selection_weight": {
+          "$ref": "#/$defs/nullable_number"
+        },
+        "probability_semantics": {
+          "enum": [
+            "normalized_weight",
+            "unknown"
+          ]
+        },
+        "restriction": {
+          "$ref": "#/$defs/restriction"
+        },
+        "health": {
+          "$ref": "#/$defs/nullable_number"
+        },
+        "semantics_complete": {
+          "type": "boolean"
+        },
+        "reason_codes": {
+          "$ref": "#/$defs/reason_codes"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_depth",
+        "max_nodes",
+        "reached"
+      ],
+      "properties": {
+        "max_depth": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 128,
+          "default": 32
+        },
+        "max_nodes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000,
+          "default": 1000
+        },
+        "reached": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

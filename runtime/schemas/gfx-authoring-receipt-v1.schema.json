@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/gfx-authoring-receipt-v1.schema.json",
+  "title": "Guarded GFx authoring receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "status", "transaction_name", "source_approval", "source",
+    "workspace", "validation", "binary_diff", "repack", "resolution", "rollback",
+    "index_access"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.gfx-authoring-receipt.v1"},
+    "status": {"const": "PASS"},
+    "transaction_name": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
+    "source_approval": {
+      "type": "object", "additionalProperties": false,
+      "required": ["approval_id", "binding_sha256"],
+      "properties": {
+        "approval_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "binding_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["pak_path", "pak_sha256", "member_path", "member_sha256"],
+      "properties": {
+        "pak_path": {"$ref": "#/$defs/path"},
+        "pak_sha256": {"$ref": "#/$defs/sha256"},
+        "member_path": {"$ref": "#/$defs/path"},
+        "member_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "workspace": {
+      "type": "object", "additionalProperties": false,
+      "required": ["transaction_path", "extracted_path", "edited_path", "candidate_pak_path", "receipt_path", "rollback_manifest_path"],
+      "properties": {
+        "transaction_path": {"$ref": "#/$defs/path"},
+        "extracted_path": {"$ref": "#/$defs/path"},
+        "edited_path": {"$ref": "#/$defs/path"},
+        "candidate_pak_path": {"$ref": "#/$defs/path"},
+        "receipt_path": {"$ref": "#/$defs/path"},
+        "rollback_manifest_path": {"$ref": "#/$defs/path"}
+      }
+    },
+    "validation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scope", "source_container", "edited_container", "semantic_claim", "runtime_claim"],
+      "properties": {
+        "scope": {"const": "container_header_and_exact_bytes_only"},
+        "source_container": {"const": "valid"},
+        "edited_container": {"const": "valid"},
+        "semantic_claim": {"const": "not_evaluated"},
+        "runtime_claim": {"const": "not_evaluated"}
+      }
+    },
+    "binary_diff": {
+      "type": "object", "additionalProperties": false,
+      "required": ["before_sha256", "after_sha256", "before_bytes", "after_bytes", "changed_bytes", "ranges"],
+      "properties": {
+        "before_sha256": {"$ref": "#/$defs/sha256"},
+        "after_sha256": {"$ref": "#/$defs/sha256"},
+        "before_bytes": {"type": "integer", "minimum": 8, "maximum": 67108864},
+        "after_bytes": {"type": "integer", "minimum": 8, "maximum": 67108864},
+        "changed_bytes": {"type": "integer", "minimum": 0, "maximum": 67108864},
+        "ranges": {
+          "type": "array", "maxItems": 100000,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["offset", "before_length", "after_length", "before_sha256", "after_sha256"],
+            "properties": {
+              "offset": {"type": "integer", "minimum": 0, "maximum": 67108864},
+              "before_length": {"type": "integer", "minimum": 0, "maximum": 67108864},
+              "after_length": {"type": "integer", "minimum": 0, "maximum": 67108864},
+              "before_sha256": {"$ref": "#/$defs/sha256"},
+              "after_sha256": {"$ref": "#/$defs/sha256"}
+            }
+          }
+        }
+      }
+    },
+    "repack": {
+      "type": "object", "additionalProperties": false,
+      "required": ["candidate_pak_sha256", "deterministic_member_order", "source_compression_methods_preserved"],
+      "properties": {
+        "candidate_pak_sha256": {"$ref": "#/$defs/sha256"},
+        "deterministic_member_order": {"const": true},
+        "source_compression_methods_preserved": {"const": true}
+      }
+    },
+    "resolution": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "member_path", "resolved_sha256", "unrelated_members_identical", "unrelated_member_count"],
+      "properties": {
+        "status": {"const": "exact_member_resolved"},
+        "member_path": {"$ref": "#/$defs/path"},
+        "resolved_sha256": {"$ref": "#/$defs/sha256"},
+        "unrelated_members_identical": {"const": true},
+        "unrelated_member_count": {"type": "integer", "minimum": 0, "maximum": 16383}
+      }
+    },
+    "rollback": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scope", "manifest_recorded", "separate_approval_required"],
+      "properties": {
+        "scope": {"const": "isolated_transaction_directory_only"},
+        "manifest_recorded": {"const": true},
+        "separate_approval_required": {"const": true}
+      }
+    },
+    "index_access": {"const": "not_used"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "path": {"type": "string", "minLength": 1, "maxLength": 8192}
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/ui-production-readiness-v1.schema.json",
+  "title": "KCD2 UI/GFx production readiness result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evaluation_id", "input_sha256", "candidate_provider_id", "status", "production_ready", "confidence", "unresolved_gates", "gates"],
+  "properties": {
+    "schema_version": {"const": "kcd2.ui-production-readiness.v1"},
+    "evaluation_id": {"$ref": "#/$defs/text"},
+    "input_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "candidate_provider_id": {"$ref": "#/$defs/text"},
+    "status": {"enum": ["production_ready", "issues_found", "capture_inconclusive"]},
+    "production_ready": {"type": "boolean"},
+    "confidence": {"enum": ["qualified", "rejected", "incomplete"]},
+    "unresolved_gates": {"type": "array", "maxItems": 64, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "gates": {"$ref": "#/$defs/gates"}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "gate_status": {"enum": ["complete", "observed", "issues_found", "capture_inconclusive"]},
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["conflicts", "file_resolution", "dependencies", "observations", "context_dependence"],
+      "properties": {
+        "conflicts": {"$ref": "#/$defs/conflict_gate"},
+        "file_resolution": {"$ref": "#/$defs/file_gate"},
+        "dependencies": {"$ref": "#/$defs/dependency_gate"},
+        "observations": {"$ref": "#/$defs/observation_gate"},
+        "context_dependence": {"$ref": "#/$defs/context_gate"}
+      }
+    },
+    "conflict_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "observed_count", "absence_claim_valid", "conclusion"],
+      "properties": {
+        "status": {"$ref": "#/$defs/gate_status"},
+        "observed_count": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "absence_claim_valid": {"type": "boolean"},
+        "conclusion": {"$ref": "#/$defs/text"}
+      }
+    },
+    "file_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "files"],
+      "properties": {
+        "status": {"$ref": "#/$defs/gate_status"},
+        "files": {"type": "array", "minItems": 1, "maxItems": 4096, "items": {"$ref": "#/$defs/file_result"}}
+      }
+    },
+    "file_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonical_path", "candidate_owned", "winner_provider_id", "candidate_is_winner", "status"],
+      "properties": {
+        "canonical_path": {"$ref": "#/$defs/text"},
+        "candidate_owned": {"type": "boolean"},
+        "winner_provider_id": {"type": ["string", "null"], "minLength": 1, "maxLength": 1024},
+        "candidate_is_winner": {"type": "boolean"},
+        "status": {"$ref": "#/$defs/gate_status"}
+      }
+    },
+    "dependency_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "checks"],
+      "properties": {
+        "status": {"$ref": "#/$defs/gate_status"},
+        "checks": {"type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/dependency_result"}}
+      }
+    },
+    "dependency_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dependency_id", "kind", "target", "classification", "evidence_locator", "status"],
+      "properties": {
+        "dependency_id": {"$ref": "#/$defs/text"},
+        "kind": {"enum": ["dds", "localization", "action_map", "reference"]},
+        "target": {"$ref": "#/$defs/text"},
+        "classification": {"enum": ["resolved_active", "missing_globally", "missing_from_active_set", "available_only_in_dependency", "defined_by_later_mod", "defined_wrong_case", "ambiguous_duplicate_definition", "capture_inconclusive"]},
+        "evidence_locator": {"$ref": "#/$defs/text"},
+        "status": {"$ref": "#/$defs/gate_status"}
+      }
+    },
+    "observation_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["render", "runtime"],
+      "properties": {
+        "render": {"$ref": "#/$defs/observation_result"},
+        "runtime": {"$ref": "#/$defs/observation_result"}
+      }
+    },
+    "observation_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "evidence_ids"],
+      "properties": {
+        "status": {"$ref": "#/$defs/gate_status"},
+        "evidence_ids": {"type": "array", "maxItems": 4096, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}}
+      }
+    },
+    "context_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "save", "level"],
+      "properties": {
+        "status": {"$ref": "#/$defs/gate_status"},
+        "save": {"$ref": "#/$defs/context_result"},
+        "level": {"$ref": "#/$defs/context_result"}
+      }
+    },
+    "context_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "evidence_layer", "evidence_locator"],
+      "properties": {
+        "classification": {"enum": ["dependent", "independent", "not_supported", "capture_inconclusive"]},
+        "evidence_layer": {"enum": ["static", "runtime_observed", "user_confirmed"]},
+        "evidence_locator": {"type": ["string", "null"], "minLength": 1, "maxLength": 1024}
+      }
+    }
+  }
+}

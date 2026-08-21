@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/native-fingerprint-evidence-v1.schema.json",
+  "title": "KCD2 reviewed native fingerprint evidence v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "evidence_set_id", "recorded_at", "module",
+    "source_artifacts", "functions"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.native-fingerprint-evidence.v1"},
+    "evidence_set_id": {"$ref": "#/$defs/id"},
+    "recorded_at": {"$ref": "#/$defs/date_time"},
+    "module": {"$ref": "#/$defs/module"},
+    "source_artifacts": {
+      "type": "array", "minItems": 1, "maxItems": 40000,
+      "items": {"$ref": "#/$defs/artifact"}
+    },
+    "functions": {
+      "type": "array", "minItems": 1, "maxItems": 10000,
+      "items": {"$ref": "#/$defs/function"}
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string", "minLength": 1, "maxLength": 256,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "date_time": {"type": "string", "format": "date-time", "maxLength": 64},
+    "text": {"type": "string", "minLength": 1, "maxLength": 512},
+    "review": {
+      "type": "object", "additionalProperties": false,
+      "required": ["reviewed_by", "reviewed_at"],
+      "properties": {
+        "reviewed_by": {"type": "string", "minLength": 1, "maxLength": 256},
+        "reviewed_at": {"$ref": "#/$defs/date_time"}
+      }
+    },
+    "module": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "sha256", "timestamp", "image_size"],
+      "properties": {
+        "name": {"$ref": "#/$defs/text"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "timestamp": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "image_size": {"type": "integer", "minimum": 1, "maximum": 4294967295}
+      }
+    },
+    "artifact": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "evidence_id", "artifact_sha256", "artifact_role", "exact_locator", "review"
+      ],
+      "properties": {
+        "evidence_id": {"$ref": "#/$defs/id"},
+        "artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "artifact_role": {
+          "enum": ["ghidra_function", "raw_pe_bytes", "ghidra_callers", "raw_pe_unwind"]
+        },
+        "exact_locator": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "review": {"$ref": "#/$defs/review"}
+      }
+    },
+    "span": {
+      "type": "object", "additionalProperties": false,
+      "required": ["offset", "length", "kind"],
+      "properties": {
+        "offset": {"type": "integer", "minimum": 0, "maximum": 65535},
+        "length": {"type": "integer", "minimum": 1, "maximum": 65536},
+        "kind": {"enum": ["image_address", "relative_displacement", "import_address"]}
+      }
+    },
+    "caller": {
+      "type": "object", "additionalProperties": false,
+      "required": ["caller_rva", "call_site_rva", "call_kind"],
+      "properties": {
+        "caller_rva": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "call_site_rva": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "call_kind": {"enum": ["direct", "indirect", "tail"]}
+      }
+    },
+    "unwind": {
+      "type": "object", "additionalProperties": false,
+      "required": ["start_rva", "end_rva", "unwind_info_rva", "unwind_info_hex"],
+      "properties": {
+        "start_rva": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "end_rva": {"type": "integer", "minimum": 1, "maximum": 4294967295},
+        "unwind_info_rva": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "unwind_info_hex": {
+          "type": "string", "minLength": 2, "maxLength": 8192,
+          "pattern": "^(?:[0-9A-Fa-f]{2})+$"
+        }
+      }
+    },
+    "evidence_bindings": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ghidra_function", "raw_pe_bytes", "callers", "unwind"],
+      "properties": {
+        "ghidra_function": {"$ref": "#/$defs/id"},
+        "raw_pe_bytes": {"$ref": "#/$defs/id"},
+        "callers": {"$ref": "#/$defs/id"},
+        "unwind": {"$ref": "#/$defs/id"}
+      }
+    },
+    "interpretation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["registry_entry_id", "status", "semantic_name"],
+      "properties": {
+        "registry_entry_id": {"$ref": "#/$defs/id"},
+        "status": {
+          "enum": [
+            "PROPOSED", "STATICALLY_SUPPORTED", "RUNTIME_SUPPORTED", "CONFIRMED",
+            "SUPERSEDED", "REJECTED"
+          ]
+        },
+        "semantic_name": {"$ref": "#/$defs/text"}
+      }
+    },
+    "function": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "function_id", "semantic_name", "rva", "raw_bytes_hex", "normalization_spans",
+        "callers", "unwind", "evidence_ids", "interpretations", "review"
+      ],
+      "properties": {
+        "function_id": {"$ref": "#/$defs/id"},
+        "semantic_name": {"$ref": "#/$defs/text"},
+        "rva": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "raw_bytes_hex": {
+          "type": "string", "minLength": 2, "maxLength": 131072,
+          "pattern": "^(?:[0-9A-Fa-f]{2})+$"
+        },
+        "normalization_spans": {
+          "type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/span"}
+        },
+        "callers": {
+          "type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/caller"}
+        },
+        "unwind": {"$ref": "#/$defs/unwind"},
+        "evidence_ids": {"$ref": "#/$defs/evidence_bindings"},
+        "interpretations": {
+          "type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/interpretation"}
+        },
+        "review": {"$ref": "#/$defs/review"}
+      }
+    }
+  }
+}

@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/ghidra-native-export-v1.schema.json",
+  "title": "KCD2 reviewed Ghidra native export v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "export_id",
+    "created_at",
+    "producer",
+    "module",
+    "headless_access_guard",
+    "exports",
+    "summaries"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.ghidra-native-export.v1"},
+    "export_id": {"$ref": "#/$defs/id"},
+    "created_at": {"type": "string", "format": "date-time", "maxLength": 64},
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "mode"],
+      "properties": {
+        "name": {"$ref": "#/$defs/short_string"},
+        "version": {"$ref": "#/$defs/short_string"},
+        "mode": {"const": "headless"}
+      }
+    },
+    "module": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "sha256", "image_size", "pe_timestamp"],
+      "properties": {
+        "name": {"$ref": "#/$defs/short_string"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "image_size": {"type": "integer", "minimum": 1, "maximum": 4294967295},
+        "pe_timestamp": {"type": "integer", "minimum": 0, "maximum": 4294967295}
+      }
+    },
+    "headless_access_guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "project_locator",
+        "project_access",
+        "gui_session_state",
+        "project_lock",
+        "persistent_project_write"
+      ],
+      "properties": {
+        "project_locator": {"type": "string", "minLength": 1, "maxLength": 2048},
+        "project_access": {"const": "read_only"},
+        "gui_session_state": {"const": "verified_closed"},
+        "project_lock": {"const": "acquired"},
+        "persistent_project_write": {"const": false}
+      }
+    },
+    "exports": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "strings",
+        "string_xrefs",
+        "rtti",
+        "complete_object_locators",
+        "vtables",
+        "functions",
+        "callers",
+        "constructors",
+        "properties",
+        "enums",
+        "fields"
+      ],
+      "properties": {
+        "strings": {"$ref": "#/$defs/records"},
+        "string_xrefs": {"$ref": "#/$defs/records"},
+        "rtti": {"$ref": "#/$defs/records"},
+        "complete_object_locators": {"$ref": "#/$defs/records"},
+        "vtables": {"$ref": "#/$defs/records"},
+        "functions": {"$ref": "#/$defs/records"},
+        "callers": {"$ref": "#/$defs/records"},
+        "constructors": {"$ref": "#/$defs/records"},
+        "properties": {"$ref": "#/$defs/records"},
+        "enums": {"$ref": "#/$defs/records"},
+        "fields": {"$ref": "#/$defs/records"}
+      }
+    },
+    "summaries": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4096,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["summary_id", "review_status", "text", "record_ids"],
+        "properties": {
+          "summary_id": {"$ref": "#/$defs/id"},
+          "review_status": {"enum": ["reviewed", "unreviewed"]},
+          "text": {"type": "string", "minLength": 1, "maxLength": 8192},
+          "record_ids": {
+            "type": "array",
+            "maxItems": 65536,
+            "uniqueItems": true,
+            "items": {"$ref": "#/$defs/id"}
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "short_string": {"type": "string", "minLength": 1, "maxLength": 512},
+    "sha256": {"type": "string", "pattern": "^[0-9A-Fa-f]{64}$"},
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["module_sha256", "locator_kind", "value"],
+      "properties": {
+        "module_sha256": {"$ref": "#/$defs/sha256"},
+        "locator_kind": {"enum": ["rva", "module_offset"]},
+        "value": {"type": "integer", "minimum": 0, "maximum": 4294967295}
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reviewed_by", "reviewed_at"],
+      "properties": {
+        "status": {"enum": ["reviewed", "unreviewed"]},
+        "reviewed_by": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "reviewed_at": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "maxLength": 64
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "reviewed"}}},
+          "then": {
+            "properties": {
+              "reviewed_by": {"type": "string", "minLength": 1, "maxLength": 256},
+              "reviewed_at": {"type": "string", "format": "date-time", "maxLength": 64}
+            }
+          },
+          "else": {
+            "properties": {
+              "reviewed_by": {"type": "null"},
+              "reviewed_at": {"type": "null"}
+            }
+          }
+        }
+      ]
+    },
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_id",
+        "identity",
+        "semantic_name",
+        "summary",
+        "review",
+        "evidence_locators"
+      ],
+      "properties": {
+        "record_id": {"$ref": "#/$defs/id"},
+        "identity": {"$ref": "#/$defs/identity"},
+        "owner_identity": {
+          "anyOf": [{"$ref": "#/$defs/identity"}, {"type": "null"}]
+        },
+        "target_identity": {
+          "anyOf": [{"$ref": "#/$defs/identity"}, {"type": "null"}]
+        },
+        "semantic_name": {"$ref": "#/$defs/short_string"},
+        "summary": {"type": "string", "minLength": 1, "maxLength": 8192},
+        "review": {"$ref": "#/$defs/review"},
+        "evidence_locators": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 2048}
+        },
+        "value": {"type": ["string", "integer", "null"], "maxLength": 8192},
+        "type_name": {"type": ["string", "null"], "maxLength": 1024},
+        "offset": {"type": ["integer", "null"], "minimum": 0, "maximum": 4294967295},
+        "size": {"type": ["integer", "null"], "minimum": 0, "maximum": 4294967295},
+        "signature": {"type": ["string", "null"], "maxLength": 4096}
+      }
+    },
+    "records": {
+      "type": "array",
+      "maxItems": 1000000,
+      "items": {"$ref": "#/$defs/record"}
+    }
+  }
+}

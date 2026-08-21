@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/effective-path-resolution-v1.schema.json",
+  "title": "KCD2 effective internal path resolution v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "inventory_id",
+    "canonical_path_resolution",
+    "load_order_provenance"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.effective-path-resolution.v1"},
+    "inventory_id": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "canonical_path_resolution": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "query_id",
+        "canonical_path",
+        "discovery_mode",
+        "coverage_id",
+        "contributions",
+        "resolution"
+      ]
+    },
+    "load_order_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_ids",
+        "declared_complete",
+        "effective_complete",
+        "source",
+        "sha256"
+      ],
+      "properties": {
+        "provider_ids": {
+          "type": "array",
+          "maxItems": 4096,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 1024}
+        },
+        "declared_complete": {"type": "boolean"},
+        "effective_complete": {"type": "boolean"},
+        "source": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

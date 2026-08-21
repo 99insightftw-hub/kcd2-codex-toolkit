@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/transaction-approval-v1.schema.json",
+  "title": "KCD2 transaction approval v1",
+  "description": "One-time approval bound to the canonical JSON of every field except binding_sha256. Verifiers rehash the named targets and directly probe process state before consuming the nonce and beginning mutation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "approval_id",
+    "operation",
+    "decision",
+    "issued_at",
+    "nonce",
+    "targets",
+    "process_preconditions",
+    "user_decision",
+    "consumed",
+    "binding_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.transaction-approval.v1"
+    },
+    "approval_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "operation": {
+      "enum": [
+        "build_candidate",
+        "repack_package",
+        "install_candidate",
+        "replace_candidate",
+        "rollback",
+        "install_plugin",
+        "restore_plugin",
+        "persistent_index_write",
+        "persistent_graph_write",
+        "deploy_native_component",
+        "debugger_mutation"
+      ]
+    },
+    "decision": {
+      "enum": [
+        "approved",
+        "rejected"
+      ]
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "nonce": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 256,
+      "pattern": "^[A-Za-z0-9._~+/-]+$"
+    },
+    "requester": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "targets": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "role",
+          "path",
+          "expected_current_sha256",
+          "proposed_sha256"
+        ],
+        "properties": {
+          "role": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          },
+          "expected_current_sha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9A-Fa-f]{64}$"
+          },
+          "proposed_sha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9A-Fa-f]{64}$"
+          }
+        }
+      }
+    },
+    "process_preconditions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "game_running",
+        "debugger_state"
+      ],
+      "properties": {
+        "game_running": {
+          "type": "boolean"
+        },
+        "debugger_state": {
+          "enum": [
+            "not_running",
+            "detached",
+            "connected_running",
+            "connected_paused",
+            "not_applicable"
+          ]
+        }
+      }
+    },
+    "user_decision": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8192
+    },
+    "consumed": {
+      "type": "boolean"
+    },
+    "binding_sha256": {
+      "type": "string",
+      "pattern": "^[0-9A-Fa-f]{64}$"
+    }
+  }
+}

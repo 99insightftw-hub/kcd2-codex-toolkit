@@ -1,0 +1,341 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/probe-contract-v2.schema.json",
+  "title": "KCD2 manifest-driven native probe contract v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "probe_id", "revision", "carrier", "hypothesis", "expected_module",
+    "deployment_binding_required", "hooks", "record_layout_evidence", "identity_matchers",
+    "event_schemas", "event_limits", "correlation_contracts", "controls", "negative_evidence_policy",
+    "source_contract", "cleanup"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.probe-contract.v2"},
+    "probe_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "revision": {"type": "string", "minLength": 1, "maxLength": 128},
+    "carrier": {"enum": ["kcse", "x64dbg", "hybrid", "lua"]},
+    "hypothesis": {"type": "string", "minLength": 1, "maxLength": 4000},
+    "expected_module": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "sha256", "timestamp", "image_size", "profile_id"],
+      "properties": {
+        "name": {"const": "WHGame.dll"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "timestamp": {"type": "string", "pattern": "^0x[A-Fa-f0-9]+$"},
+        "image_size": {"type": "integer", "minimum": 1},
+        "profile_id": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    },
+    "deployment_binding_required": {"const": true},
+    "hooks": {
+      "type": "array", "minItems": 1, "maxItems": 64,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["hook_id", "rva", "purpose", "prototype_profile", "entry_lock", "caller_constraint", "record_family", "enabled"],
+        "properties": {
+          "hook_id": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"},
+          "rva": {"type": "string", "pattern": "^0x[A-Fa-f0-9]+$"},
+          "purpose": {"type": "string", "minLength": 1, "maxLength": 1000},
+          "prototype_profile": {"type": "string", "minLength": 1, "maxLength": 256},
+          "entry_lock": {
+            "type": "object", "additionalProperties": false,
+            "required": ["bytes_hex", "source", "raw_pe_preflight_required"],
+            "properties": {
+              "bytes_hex": {"type": "string", "pattern": "^(?:[A-Fa-f0-9]{2})(?: [A-Fa-f0-9]{2})*$", "maxLength": 1024},
+              "source": {"const": "raw_pe_rva_mapping"},
+              "raw_pe_preflight_required": {"const": true}
+            }
+          },
+          "caller_constraint": {"$ref": "#/$defs/caller_constraint"},
+          "record_family": {"type": ["string", "null"], "maxLength": 256},
+          "enabled": {"type": "boolean"},
+          "dormant_helper": {"type": "boolean", "default": false}
+        }
+      }
+    },
+    "record_layout_evidence": {
+      "type": "array", "maxItems": 256,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["family", "module_sha256", "layout_profile_id", "fields"],
+        "properties": {
+          "family": {"type": "string", "minLength": 1, "maxLength": 256},
+          "module_sha256": {"$ref": "#/$defs/sha256"},
+          "layout_profile_id": {"type": "string", "minLength": 1, "maxLength": 256},
+          "fields": {
+            "type": "array", "minItems": 1, "maxItems": 256,
+            "items": {
+              "type": "object", "additionalProperties": false,
+                "required": ["field_id", "offset", "width", "semantic_type", "evidence", "confidence", "promotion_state"],
+                "properties": {
+                  "field_id": {"type": "string", "minLength": 1, "maxLength": 256},
+                  "offset": {"type": "string", "pattern": "^0x[A-Fa-f0-9]+$"},
+                  "width": {"type": "integer", "minimum": 1, "maximum": 4096},
+                "semantic_type": {"enum": ["fragment_guid", "table_row_identity", "record_pointer_ephemeral", "database_index", "dispatch_id", "predicate_flag", "predicate_value", "target_mask", "record_field", "unknown_discovery_candidate"]},
+                "evidence": {"$ref": "#/$defs/layout_citations"},
+                "confidence": {"enum": ["confirmed", "high", "medium", "low", "unknown"]},
+                "promotion_state": {"enum": ["confirmed", "provisional_discovery", "rejected"]},
+                "discovery": {"$ref": "#/$defs/layout_discovery"},
+                "corroboration": {
+                  "type": "array", "maxItems": 16,
+                  "items": {"$ref": "#/$defs/layout_corroboration"}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "identity_matchers": {
+      "type": "array", "maxItems": 128,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["matcher_id", "identity_kind", "mode", "state", "record_family", "field_id", "bounded_span_bytes", "known_values", "evidence"],
+        "properties": {
+          "matcher_id": {"type": "string", "minLength": 1, "maxLength": 128},
+          "identity_kind": {"enum": ["fragment_guid", "table_row_identity", "database_index", "record_pointer_ephemeral", "dispatch_id", "known_value_span_discovery"]},
+          "mode": {"enum": ["exact_field", "bounded_readable_span", "unfiltered_population", "runtime_token"]},
+          "state": {"enum": ["confirmed_filter", "provisional_discovery", "unfiltered_observation"]},
+          "record_family": {"type": "string", "minLength": 1, "maxLength": 256},
+          "field_id": {"type": ["string", "null"], "maxLength": 256},
+          "bounded_span_bytes": {"type": ["integer", "null"], "minimum": 1, "maximum": 4096},
+          "known_values": {"type": "array", "maxItems": 128, "items": {"type": "string", "maxLength": 512}},
+          "evidence": {"$ref": "#/$defs/layout_citations"}
+        }
+      }
+    },
+    "event_schemas": {
+      "type": "object", "minProperties": 1, "maxProperties": 128,
+      "additionalProperties": {
+        "type": "object", "additionalProperties": false,
+        "required": ["fields", "sensitive_fields", "numeric_histogram_fields"],
+        "properties": {
+          "parent_event_family": {"type": ["string", "null"], "maxLength": 128},
+          "parent_id_field": {"type": ["string", "null"], "maxLength": 128},
+          "fields": {
+            "type": "object", "maxProperties": 128,
+            "additionalProperties": {"enum": ["string", "integer", "number", "boolean", "hex", "guid", "ephemeral_pointer", "runtime_token"]}
+          },
+          "sensitive_fields": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "maxLength": 128}},
+          "numeric_histogram_fields": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "maxLength": 128}},
+          "identity_match_fields": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "maxLength": 128}}
+        }
+      }
+    },
+    "event_limits": {
+      "type": "object", "minProperties": 1, "maxProperties": 128,
+      "additionalProperties": {
+        "type": "object", "additionalProperties": false,
+        "required": ["maximum_events", "maximum_bytes"],
+        "properties": {
+          "maximum_events": {"type": "integer", "minimum": 1, "maximum": 100000},
+          "maximum_bytes": {"type": "integer", "minimum": 1, "maximum": 33554432}
+        }
+      }
+    },
+    "correlation_contracts": {
+      "type": "array", "minItems": 1, "maxItems": 64,
+      "items": {"$ref": "#/$defs/native_stage_correlation"}
+    },
+    "controls": {
+      "type": "object", "additionalProperties": false,
+      "required": ["unfiltered_population", "positive_controls"],
+      "properties": {
+        "unfiltered_population": {"type": "boolean"},
+        "positive_controls": {
+          "type": "array", "maxItems": 64,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["control_id", "description", "expected_event_family", "same_filter_path"],
+            "properties": {
+              "control_id": {"type": "string", "minLength": 1, "maxLength": 128},
+              "description": {"type": "string", "minLength": 1, "maxLength": 2000},
+              "expected_event_family": {"type": "string", "minLength": 1, "maxLength": 128},
+              "same_filter_path": {"type": "boolean"}
+            }
+          }
+        }
+      }
+    },
+    "negative_evidence_policy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["require_boot", "require_install_ok", "require_game_fingerprint", "require_exact_deployment_binding", "require_module_base", "require_unfiltered_queries", "require_valid_layout", "require_valid_identity_filter", "require_control_or_population", "require_valid_correlation", "require_unsaturated_limits", "require_complete_log", "require_no_dropped_events", "require_user_state_confirmation"],
+      "properties": {
+        "require_boot": {"const": true},
+        "require_install_ok": {"const": true},
+        "require_game_fingerprint": {"const": true},
+        "require_exact_deployment_binding": {"const": true},
+        "require_module_base": {"const": true},
+        "require_unfiltered_queries": {"const": true},
+        "require_valid_layout": {"const": true},
+        "require_valid_identity_filter": {"const": true},
+        "require_control_or_population": {"const": true},
+        "require_valid_correlation": {"const": true},
+        "require_unsaturated_limits": {"const": true},
+        "require_complete_log": {"const": true},
+        "require_no_dropped_events": {"const": true},
+        "require_user_state_confirmation": {"const": true}
+      }
+    },
+    "source_contract": {
+      "type": "object", "additionalProperties": false,
+      "required": ["manifest_sha256", "generated_header_sha256", "compiled_contract_sha256", "module_base_logging_required", "unused_hook_policy"],
+      "properties": {
+        "manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "generated_header_sha256": {"$ref": "#/$defs/sha256"},
+        "compiled_contract_sha256": {"$ref": "#/$defs/sha256"},
+        "module_base_logging_required": {"const": true},
+        "unused_hook_policy": {"enum": ["reject", "allow_explicit_dormant_only"]}
+      }
+    },
+    "cleanup": {
+      "type": "object", "additionalProperties": false,
+      "required": ["remove_temporary_probe", "clear_breakpoints", "archive_raw_log", "restore_companion_set"],
+      "properties": {
+        "remove_temporary_probe": {"type": "boolean"},
+        "clear_breakpoints": {"type": "boolean"},
+        "archive_raw_log": {"type": "boolean"},
+        "restore_companion_set": {"type": "boolean"}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+    "evidence_refs": {"type": "array", "minItems": 1, "maxItems": 256, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 512}},
+    "layout_citation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["evidence_class", "record_family", "artifact", "locator", "claim"],
+      "properties": {
+        "evidence_class": {"enum": ["static", "runtime"]},
+        "record_family": {"type": "string", "minLength": 1, "maxLength": 256},
+        "artifact": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "locator": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "claim": {"type": "string", "minLength": 1, "maxLength": 2000}
+      }
+    },
+    "layout_citations": {
+      "type": "array", "minItems": 1, "maxItems": 256,
+      "items": {"$ref": "#/$defs/layout_citation"}
+    },
+    "layout_discovery": {
+      "type": "object", "additionalProperties": false,
+      "required": ["mode", "known_value_id", "readable_span_bytes"],
+      "properties": {
+        "mode": {"const": "bounded_readable_span"},
+        "known_value_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "readable_span_bytes": {"type": "integer", "minimum": 1, "maximum": 4096}
+      }
+    },
+    "layout_corroboration": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "evidence"],
+      "properties": {
+        "kind": {"enum": ["native_consumer", "repeated_positive_control"]},
+        "evidence": {"$ref": "#/$defs/layout_citations"}
+      }
+    },
+    "correlation_stage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["stage_id", "hook_id"],
+      "properties": {
+        "stage_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "hook_id": {"type": "string", "minLength": 1, "maxLength": 128}
+      }
+    },
+    "correlation_citation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["evidence_class", "artifact", "module_sha256", "locator", "claim"],
+      "properties": {
+        "evidence_class": {"enum": ["static", "runtime"]},
+        "artifact": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "module_sha256": {"$ref": "#/$defs/sha256"},
+        "locator": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "claim": {"type": "string", "minLength": 1, "maxLength": 2000}
+      }
+    },
+    "correlation_citations": {
+      "type": "array", "minItems": 1, "maxItems": 256,
+      "items": {"$ref": "#/$defs/correlation_citation"}
+    },
+    "owner_function_proof": {
+      "type": "object", "additionalProperties": false,
+      "required": ["module_sha256", "function_rva", "owns_query", "owns_output", "static_evidence"],
+      "properties": {
+        "module_sha256": {"$ref": "#/$defs/sha256"},
+        "function_rva": {"type": "string", "pattern": "^0x[A-Fa-f0-9]+$"},
+        "owns_query": {"type": "boolean"},
+        "owns_output": {"type": "boolean"},
+        "static_evidence": {"$ref": "#/$defs/correlation_citations"}
+      }
+    },
+    "caller_return_lock_proof": {
+      "type": "object", "additionalProperties": false,
+      "required": ["lock_kind", "module_sha256", "lock_rva", "static_evidence"],
+      "properties": {
+        "lock_kind": {"enum": ["exact_caller_rva", "exact_return_rva"]},
+        "module_sha256": {"$ref": "#/$defs/sha256"},
+        "lock_rva": {"type": "string", "pattern": "^0x[A-Fa-f0-9]+$"},
+        "static_evidence": {"$ref": "#/$defs/correlation_citations"}
+      }
+    },
+    "lifetime_proof": {
+      "type": "object", "additionalProperties": false,
+      "required": ["storage", "lifetime_evidence", "routing_evidence"],
+      "properties": {
+        "storage": {"enum": ["object", "tls"]},
+        "lifetime_evidence": {"$ref": "#/$defs/correlation_citations"},
+        "routing_evidence": {"$ref": "#/$defs/correlation_citations"}
+      }
+    },
+    "bounded_x64dbg_proof": {
+      "type": "object", "additionalProperties": false,
+      "required": ["session_id", "module_sha256", "source_checkpoint", "target_checkpoint", "maximum_breakpoints", "maximum_events", "thread_identity_proven", "pointer_lifetime_proven", "arguments_proven", "call_stack_proven", "runtime_evidence"],
+      "properties": {
+        "session_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "module_sha256": {"$ref": "#/$defs/sha256"},
+        "source_checkpoint": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,128}\\+0x[A-Fa-f0-9]+$"},
+        "target_checkpoint": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,128}\\+0x[A-Fa-f0-9]+$"},
+        "maximum_breakpoints": {"type": "integer", "minimum": 1, "maximum": 16},
+        "maximum_events": {"type": "integer", "minimum": 1, "maximum": 10000},
+        "thread_identity_proven": {"type": "boolean"},
+        "pointer_lifetime_proven": {"type": "boolean"},
+        "arguments_proven": {"type": "boolean"},
+        "call_stack_proven": {"type": "boolean"},
+        "runtime_evidence": {"$ref": "#/$defs/correlation_citations"}
+      }
+    },
+    "native_stage_correlation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["correlation_id", "source_stage", "target_stage", "strategy", "observations", "owner_function", "caller_return_lock", "lifetime_proof", "x64dbg_proof"],
+      "properties": {
+        "correlation_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "source_stage": {"$ref": "#/$defs/correlation_stage"},
+        "target_stage": {"$ref": "#/$defs/correlation_stage"},
+        "strategy": {"enum": ["same_owner_function", "exact_caller_return", "same_object_lifetime_proven", "tls_lifetime_proven", "bounded_x64dbg_proof"]},
+        "observations": {
+          "type": "object", "additionalProperties": false,
+          "required": ["same_thread", "same_pointer", "tls_storage"],
+          "properties": {
+            "same_thread": {"type": "boolean"},
+            "same_pointer": {"type": "boolean"},
+            "tls_storage": {"type": "boolean"}
+          }
+        },
+        "owner_function": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/owner_function_proof"}]},
+        "caller_return_lock": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/caller_return_lock_proof"}]},
+        "lifetime_proof": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/lifetime_proof"}]},
+        "x64dbg_proof": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/bounded_x64dbg_proof"}]}
+      }
+    },
+    "caller_constraint": {
+      "type": "object", "additionalProperties": false,
+      "required": ["strategy", "evidence_refs"],
+      "properties": {
+        "strategy": {"enum": ["none", "exact_return_rva", "exact_caller_rva", "owner_function", "bounded_runtime_proof"]},
+        "rva": {"type": ["string", "null"], "pattern": "^0x[A-Fa-f0-9]+$"},
+        "evidence_refs": {"$ref": "#/$defs/evidence_refs"}
+      }
+    }
+  }
+}

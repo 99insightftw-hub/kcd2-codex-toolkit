@@ -1,0 +1,561 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/capability-discovery-v1.schema.json",
+  "title": "KCD2 capability discovery v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "capability_id",
+    "regular_ghidra",
+    "pyghidra",
+    "x64dbg",
+    "kcse",
+    "compiler",
+    "index_mcp",
+    "game_binaries",
+    "raw_pe_access",
+    "reviewed_static_evidence",
+    "environment_profile",
+    "workflow_matrix",
+    "native_workflow_blocked",
+    "reason_codes"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.capability-discovery.v1"},
+    "capability_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "regular_ghidra": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available", "path", "mode"],
+      "properties": {
+        "available": {"type": "boolean"},
+        "path": {"$ref": "#/$defs/nullable_path"},
+        "mode": {"enum": ["gui", "headless", "both", "none"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"available": {"const": true}}},
+          "then": {
+            "properties": {
+              "path": {"$ref": "#/$defs/path"},
+              "mode": {"enum": ["gui", "headless", "both"]}
+            }
+          },
+          "else": {
+            "properties": {
+              "path": {"type": "null"},
+              "mode": {"const": "none"}
+            }
+          }
+        }
+      ]
+    },
+    "pyghidra": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "effective_status",
+        "required",
+        "current_interpreter",
+        "isolated_installations",
+        "plugin_interpreter",
+        "selected_interpreter"
+      ],
+      "properties": {
+        "effective_status": {
+          "enum": [
+            "AVAILABLE_CURRENT_INTERPRETER",
+            "AVAILABLE_ISOLATED",
+            "UNAVAILABLE_OPTIONAL",
+            "UNAVAILABLE_REQUIRED"
+          ]
+        },
+        "required": {"type": "boolean"},
+        "current_interpreter": {
+          "allOf": [
+            {"$ref": "#/$defs/interpreter"},
+            {"properties": {"source": {"const": "current"}}}
+          ]
+        },
+        "isolated_installations": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "environment_root",
+              "interpreter_path",
+              "source",
+              "interpreter_version",
+              "import_succeeded",
+              "pyghidra_version",
+              "import_receipt",
+              "probe_contract"
+            ],
+            "properties": {
+              "environment_root": {"$ref": "#/$defs/path"},
+              "interpreter_path": {"$ref": "#/$defs/path"},
+              "source": {"const": "isolated"},
+              "interpreter_version": {"$ref": "#/$defs/nullable_short_string"},
+              "import_succeeded": {"type": "boolean"},
+              "pyghidra_version": {"$ref": "#/$defs/nullable_short_string"},
+              "import_receipt": {"$ref": "#/$defs/import_receipt"},
+              "probe_contract": {"const": "governed-pyghidra-import-v1"}
+            },
+            "allOf": [
+              {
+                "if": {"properties": {"import_succeeded": {"const": false}}},
+                "then": {
+                  "properties": {
+                    "pyghidra_version": {"type": "null"},
+                    "import_receipt": {
+                      "enum": [
+                        "INTERPRETER_MISSING",
+                        "NOT_IMPORTABLE",
+                        "PROBE_FAILED",
+                        "PROBE_TIMED_OUT"
+                      ]
+                    }
+                  }
+                },
+                "else": {"properties": {"import_receipt": {"const": "IMPORTED"}}}
+              }
+            ]
+          }
+        },
+        "plugin_interpreter": {
+          "anyOf": [
+            {"type": "null"},
+            {
+              "allOf": [
+                {"$ref": "#/$defs/interpreter"},
+                {"properties": {"source": {"const": "plugin"}}}
+              ]
+            }
+          ]
+        },
+        "selected_interpreter": {"$ref": "#/$defs/nullable_path"}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "effective_status": {"const": "AVAILABLE_CURRENT_INTERPRETER"}
+            }
+          },
+          "then": {
+            "properties": {
+              "current_interpreter": {
+                "properties": {"import_succeeded": {"const": true}}
+              },
+              "selected_interpreter": {"$ref": "#/$defs/path"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {"effective_status": {"const": "UNAVAILABLE_OPTIONAL"}}
+          },
+          "then": {"properties": {"required": {"const": false}}}
+        },
+        {
+          "if": {
+            "properties": {"effective_status": {"const": "AVAILABLE_ISOLATED"}}
+          },
+          "then": {
+            "properties": {
+              "current_interpreter": {
+                "properties": {"import_succeeded": {"const": false}}
+              },
+              "selected_interpreter": {"$ref": "#/$defs/path"}
+            },
+            "anyOf": [
+              {
+                "properties": {
+                  "isolated_installations": {
+                    "contains": {
+                      "type": "object",
+                      "required": ["import_succeeded"],
+                      "properties": {"import_succeeded": {"const": true}}
+                    }
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "plugin_interpreter": {
+                    "type": "object",
+                    "required": ["import_succeeded"],
+                    "properties": {"import_succeeded": {"const": true}}
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "effective_status": {
+                "enum": ["UNAVAILABLE_OPTIONAL", "UNAVAILABLE_REQUIRED"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "current_interpreter": {
+                "properties": {"import_succeeded": {"const": false}}
+              },
+              "isolated_installations": {
+                "not": {
+                  "contains": {
+                    "type": "object",
+                    "required": ["import_succeeded"],
+                    "properties": {"import_succeeded": {"const": true}}
+                  }
+                }
+              },
+              "plugin_interpreter": {
+                "anyOf": [
+                  {"type": "null"},
+                  {
+                    "type": "object",
+                    "properties": {"import_succeeded": {"const": false}}
+                  }
+                ]
+              },
+              "selected_interpreter": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {"effective_status": {"const": "UNAVAILABLE_REQUIRED"}}
+          },
+          "then": {"properties": {"required": {"const": true}}}
+        }
+      ]
+    },
+    "x64dbg": {"$ref": "#/$defs/tool_path"},
+    "kcse": {"$ref": "#/$defs/tool_path"},
+    "compiler": {"$ref": "#/$defs/path_set_capability"},
+    "index_mcp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available", "tool_names"],
+      "properties": {
+        "available": {"type": "boolean"},
+        "tool_names": {"$ref": "#/$defs/string_set"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"available": {"const": true}}},
+          "then": {"properties": {"tool_names": {"minItems": 1}}},
+          "else": {"properties": {"tool_names": {"maxItems": 0}}}
+        }
+      ]
+    },
+    "game_binaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available", "observed_paths", "missing_paths"],
+      "properties": {
+        "available": {"type": "boolean"},
+        "observed_paths": {"$ref": "#/$defs/path_set"},
+        "missing_paths": {"$ref": "#/$defs/path_set"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"available": {"const": true}}},
+          "then": {"properties": {"observed_paths": {"minItems": 1}}},
+          "else": {"properties": {"observed_paths": {"maxItems": 0}}}
+        }
+      ]
+    },
+    "raw_pe_access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available", "verified_paths", "unreadable_paths", "invalid_paths"],
+      "properties": {
+        "available": {"type": "boolean"},
+        "verified_paths": {"$ref": "#/$defs/path_set"},
+        "unreadable_paths": {"$ref": "#/$defs/path_set"},
+        "invalid_paths": {"$ref": "#/$defs/path_set"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"available": {"const": true}}},
+          "then": {"properties": {"verified_paths": {"minItems": 1}}},
+          "else": {"properties": {"verified_paths": {"maxItems": 0}}}
+        }
+      ]
+    },
+    "reviewed_static_evidence": {"$ref": "#/$defs/string_set"},
+    "environment_profile": {
+      "anyOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/environment_profile_receipt"}
+      ]
+    },
+    "workflow_matrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ghidra_first", "regular_ghidra", "pyghidra", "x64dbg", "kcse", "raw_pe_preflight"],
+      "properties": {
+        "ghidra_first": {"$ref": "#/$defs/workflow"},
+        "regular_ghidra": {"$ref": "#/$defs/workflow"},
+        "pyghidra": {"$ref": "#/$defs/workflow"},
+        "x64dbg": {"$ref": "#/$defs/workflow"},
+        "kcse": {"$ref": "#/$defs/workflow"},
+        "raw_pe_preflight": {"$ref": "#/$defs/workflow"}
+      }
+    },
+    "native_workflow_blocked": {"type": "boolean"},
+    "reason_codes": {"$ref": "#/$defs/string_set"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "pyghidra": {
+            "properties": {
+              "effective_status": {"const": "UNAVAILABLE_OPTIONAL"}
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "workflow_matrix": {
+            "properties": {
+              "pyghidra": {
+                "properties": {
+                  "eligible": {"const": false},
+                  "evidence_sources": {"maxItems": 0},
+                  "blockers": {
+                    "minItems": 1,
+                    "maxItems": 64,
+                    "contains": {"const": "PYGHIDRA_UNAVAILABLE_OPTIONAL"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "pyghidra": {
+            "properties": {
+              "effective_status": {"const": "UNAVAILABLE_REQUIRED"}
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "workflow_matrix": {
+            "properties": {
+              "pyghidra": {
+                "properties": {
+                  "eligible": {"const": false},
+                  "evidence_sources": {"maxItems": 0},
+                  "blockers": {
+                    "minItems": 1,
+                    "maxItems": 64,
+                    "contains": {"const": "PYGHIDRA_UNAVAILABLE_REQUIRED"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "path": {"type": "string", "minLength": 1, "maxLength": 2048},
+    "nullable_path": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048},
+    "nullable_short_string": {"type": ["string", "null"], "minLength": 1, "maxLength": 256},
+    "string_set": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 2048}
+    },
+    "path_set": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/path"}
+    },
+    "tool_path": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available", "path"],
+      "properties": {
+        "available": {"type": "boolean"},
+        "path": {"$ref": "#/$defs/nullable_path"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"available": {"const": true}}},
+          "then": {"properties": {"path": {"$ref": "#/$defs/path"}}}
+        }
+      ]
+    },
+    "path_set_capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available", "paths"],
+      "properties": {
+        "available": {"type": "boolean"},
+        "paths": {"$ref": "#/$defs/path_set"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"available": {"const": true}}},
+          "then": {"properties": {"paths": {"minItems": 1}}},
+          "else": {"properties": {"paths": {"maxItems": 0}}}
+        }
+      ]
+    },
+    "interpreter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "source",
+        "interpreter_version",
+        "import_succeeded",
+        "pyghidra_version",
+        "import_receipt",
+        "probe_contract"
+      ],
+      "properties": {
+        "path": {"$ref": "#/$defs/path"},
+        "source": {"enum": ["current", "plugin"]},
+        "interpreter_version": {"$ref": "#/$defs/nullable_short_string"},
+        "import_succeeded": {"type": "boolean"},
+        "pyghidra_version": {"$ref": "#/$defs/nullable_short_string"},
+        "import_receipt": {"$ref": "#/$defs/import_receipt"},
+        "probe_contract": {"const": "governed-pyghidra-import-v1"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"import_succeeded": {"const": false}}},
+          "then": {
+            "properties": {
+              "pyghidra_version": {"type": "null"},
+              "import_receipt": {
+                "enum": [
+                  "INTERPRETER_MISSING",
+                  "NOT_IMPORTABLE",
+                  "PROBE_FAILED",
+                  "PROBE_TIMED_OUT"
+                ]
+              }
+            }
+          },
+          "else": {"properties": {"import_receipt": {"const": "IMPORTED"}}}
+        }
+      ]
+    },
+    "import_receipt": {
+      "enum": [
+        "IMPORTED",
+        "INTERPRETER_MISSING",
+        "NOT_IMPORTABLE",
+        "PROBE_FAILED",
+        "PROBE_TIMED_OUT"
+      ]
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eligible", "evidence_sources", "blockers"],
+      "properties": {
+        "eligible": {"type": "boolean"},
+        "evidence_sources": {"$ref": "#/$defs/string_set"},
+        "blockers": {"$ref": "#/$defs/string_set"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"eligible": {"const": true}}},
+          "then": {
+            "properties": {
+              "evidence_sources": {"minItems": 1},
+              "blockers": {"maxItems": 0}
+            }
+          },
+          "else": {"properties": {"blockers": {"minItems": 1}}}
+        }
+      ]
+    },
+    "profile_proofs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["launch", "provider", "catalog", "version_profile"],
+      "properties": {
+        "launch": {"$ref": "#/$defs/profile_proof_receipt"},
+        "provider": {"$ref": "#/$defs/profile_proof_receipt"},
+        "catalog": {"$ref": "#/$defs/profile_proof_receipt"},
+        "version_profile": {"$ref": "#/$defs/profile_proof_receipt"}
+      }
+    },
+    "profile_proof_receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "checked_at", "evidence"],
+      "properties": {
+        "status": {"enum": ["not_required", "not_run", "passed", "failed"]},
+        "checked_at": {"type": ["string", "null"], "maxLength": 64},
+        "evidence": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048}
+      }
+    },
+    "profile_component_receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability_level", "expected_version", "expected_sha256",
+        "observed_version", "observed_sha256", "proofs"
+      ],
+      "properties": {
+        "capability_level": {
+          "enum": [
+            "PATH_PRESENT", "LAUNCH_VERIFIED", "PROVIDER_CONNECTED",
+            "TOOL_CATALOG_VISIBLE", "VERSION_PROFILE_MATCHED",
+            "WORKFLOW_ELIGIBLE", "UNAVAILABLE_OPTIONAL", "UNAVAILABLE_REQUIRED"
+          ]
+        },
+        "expected_version": {"$ref": "#/$defs/nullable_short_string"},
+        "expected_sha256": {"type": "string", "pattern": "^[0-9A-Fa-f]{64}$"},
+        "observed_version": {"$ref": "#/$defs/nullable_short_string"},
+        "observed_sha256": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9A-Fa-f]{64}$"
+        },
+        "proofs": {"$ref": "#/$defs/profile_proofs"}
+      }
+    },
+    "environment_profile_receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile_id", "compatibility_profile_id", "components"],
+      "properties": {
+        "profile_id": {"type": "string", "minLength": 1, "maxLength": 2048},
+        "compatibility_profile_id": {"type": "string", "minLength": 1, "maxLength": 2048},
+        "components": {
+          "type": "object",
+          "minProperties": 9,
+          "maxProperties": 9,
+          "additionalProperties": {"$ref": "#/$defs/profile_component_receipt"}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/channel-correlation-manifest-v1.schema.json",
+  "title": "KCD2 channel correlation manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "manifest_id", "correlation_field", "channels"],
+  "properties": {
+    "schema_version": {"const": "kcd2.channel-correlation-manifest.v1"},
+    "manifest_id": {"$ref": "#/$defs/name"},
+    "correlation_field": {"$ref": "#/$defs/name"},
+    "channels": {
+      "type": "array", "minItems": 1, "maxItems": 16,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["channel_id", "source", "events"],
+        "properties": {
+          "channel_id": {"$ref": "#/$defs/name"},
+          "source": {"$ref": "#/$defs/name"},
+          "events": {
+            "type": "object", "minProperties": 1, "maxProperties": 64,
+            "propertyNames": {"$ref": "#/$defs/name"},
+            "additionalProperties": {"$ref": "#/$defs/stage"}
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "name": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"},
+    "stage": {"enum": ["action_request", "action_admit", "action_reject", "phase", "orientation", "prompt", "fragment_route", "animation_start", "animation_complete"]}
+  }
+}

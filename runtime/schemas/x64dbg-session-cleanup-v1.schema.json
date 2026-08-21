@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/x64dbg-session-cleanup-v1.schema.json",
+  "title": "KCD2 x64dbg session cleanup v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "session_id", "temporary_breakpoints_requested",
+    "breakpoints_cleared", "detach_attempted", "verification_checks", "result", "blockers"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.x64dbg-session-cleanup.v1"},
+    "session_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "temporary_breakpoints_requested": {"$ref": "#/$defs/breakpoints"},
+    "breakpoints_cleared": {"$ref": "#/$defs/breakpoints"},
+    "detach_attempted": {"type": "boolean"},
+    "verification_checks": {
+      "type": "array", "maxItems": 2,
+      "items": {"$ref": "#/$defs/debugger_state_check"}
+    },
+    "result": {"enum": ["PASS", "BLOCKED"]},
+    "blockers": {
+      "type": "array", "maxItems": 32, "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 128}
+    }
+  },
+  "allOf": [{
+    "if": {"properties": {"result": {"const": "PASS"}}, "required": ["result"]},
+    "then": {
+      "properties": {
+        "verification_checks": {
+          "minItems": 2, "maxItems": 2,
+          "items": {
+            "allOf": [
+              {"$ref": "#/$defs/debugger_state_check"},
+              {"properties": {
+                "connected": {"const": false}, "debugging": {"const": false},
+                "paused": {"const": false}, "active_breakpoints": {"maxItems": 0}
+              }}
+            ]
+          }
+        },
+        "blockers": {"maxItems": 0}
+      }
+    }
+  }],
+  "$defs": {
+    "debugger_state_check": {
+      "type": "object", "additionalProperties": false,
+      "required": ["connected", "debugging", "running", "paused", "active_breakpoints"],
+      "properties": {
+        "connected": {"type": "boolean"}, "debugging": {"type": "boolean"},
+        "running": {"type": "boolean"}, "paused": {"type": "boolean"},
+        "active_breakpoints": {"$ref": "#/$defs/breakpoints"}
+      }
+    },
+    "breakpoints": {
+      "type": "array", "maxItems": 64, "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    }
+  }
+}

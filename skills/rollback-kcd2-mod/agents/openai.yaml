@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rollback KCD2 Mod"
+  short_description: "Restore one approved install receipt"
+  default_prompt: "Use $rollback-kcd2-mod to restore this separately approved KCD2 install receipt."

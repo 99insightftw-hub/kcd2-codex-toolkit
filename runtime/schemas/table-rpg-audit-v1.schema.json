@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/table-rpg-audit-v1.schema.json",
+  "title": "KCD2 bounded portfolio table and RPG audit v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "audit_id", "input_sha256", "game_build", "source_build", "active_state", "status", "reason_codes", "coverage", "no_conflict_claim_allowed", "tables", "reference_graph", "localization_links", "bounds"],
+  "properties": {
+    "schema_version": {"const": "kcd2.table-rpg-audit.v1"},
+    "audit_id": {"$ref": "#/$defs/text"},
+    "input_sha256": {"$ref": "#/$defs/sha256"},
+    "game_build": {"$ref": "#/$defs/text"},
+    "source_build": {"$ref": "#/$defs/text"},
+    "active_state": {
+      "type": "object", "additionalProperties": false,
+      "required": ["link_id", "status"],
+      "properties": {
+        "link_id": {"type": "string", "pattern": "^portfolio-active-state:sha256:[0-9a-f]{64}$"},
+        "status": {"enum": ["exact_current", "capture_inconclusive"]}
+      }
+    },
+    "status": {"enum": ["resolved", "issues_found", "capture_inconclusive"]},
+    "reason_codes": {"$ref": "#/$defs/reason_codes"},
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["coverage_id", "overall_status", "absence_claim_allowed"],
+      "properties": {
+        "coverage_id": {"$ref": "#/$defs/text"},
+        "overall_status": {"$ref": "#/$defs/coverage_status"},
+        "absence_claim_allowed": {"type": "boolean"}
+      }
+    },
+    "no_conflict_claim_allowed": {"type": "boolean"},
+    "tables": {"type": "array", "minItems": 1, "maxItems": 256, "items": {"$ref": "#/$defs/table"}},
+    "reference_graph": {"$ref": "#/$defs/reference_graph"},
+    "localization_links": {"type": "array", "maxItems": 20000, "items": {"$ref": "#/$defs/resolution"}},
+    "bounds": {
+      "type": "object", "additionalProperties": false,
+      "required": ["max_tables", "max_documents_per_table", "tables_considered"],
+      "properties": {
+        "max_tables": {"const": 256},
+        "max_documents_per_table": {"const": 256},
+        "tables_considered": {"type": "integer", "minimum": 1, "maximum": 256}
+      }
+    }
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "nullable_text": {"anyOf": [{"$ref": "#/$defs/text"}, {"type": "null"}]},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "reason_codes": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "coverage_status": {"enum": ["COMPLETE", "COMPLETE_FOR_REQUESTED_SCOPE", "PARTIAL_LIMIT_REACHED", "PARTIAL_STALE", "INCONCLUSIVE", "UNAVAILABLE"]},
+    "record_key": {
+      "type": "array", "minItems": 1, "maxItems": 16,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["name", "value"],
+        "properties": {"name": {"$ref": "#/$defs/text"}, "value": {"type": "string", "maxLength": 8192}}
+      }
+    },
+    "provider_citation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["provider_id", "provider_kind", "project_id", "active_provider_sha256", "load_order_index", "source_path", "content_sha256"],
+      "properties": {
+        "provider_id": {"$ref": "#/$defs/text"},
+        "provider_kind": {"$ref": "#/$defs/text"},
+        "project_id": {"anyOf": [{"type": "string", "pattern": "^project:sha256:[0-9a-f]{64}$"}, {"type": "null"}]},
+        "active_provider_sha256": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "load_order_index": {"type": "integer", "minimum": 0, "maximum": 2147483647},
+        "source_path": {"$ref": "#/$defs/text"},
+        "content_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "attribute_winner": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "provider_id", "provider_kind", "project_id", "active_provider_sha256", "load_order_index", "source_path", "content_sha256"],
+      "properties": {
+        "name": {"$ref": "#/$defs/text"}, "provider_id": {"$ref": "#/$defs/text"}, "provider_kind": {"$ref": "#/$defs/text"},
+        "project_id": {"anyOf": [{"type": "string", "pattern": "^project:sha256:[0-9a-f]{64}$"}, {"type": "null"}]},
+        "active_provider_sha256": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "load_order_index": {"type": "integer", "minimum": 0, "maximum": 2147483647}, "source_path": {"$ref": "#/$defs/text"}, "content_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "child_winner": {
+      "type": "object", "additionalProperties": false,
+      "required": ["child_index", "provider_id", "provider_kind", "project_id", "active_provider_sha256", "load_order_index", "source_path", "content_sha256"],
+      "properties": {
+        "child_index": {"type": "integer", "minimum": 0}, "provider_id": {"$ref": "#/$defs/text"}, "provider_kind": {"$ref": "#/$defs/text"},
+        "project_id": {"anyOf": [{"type": "string", "pattern": "^project:sha256:[0-9a-f]{64}$"}, {"type": "null"}]},
+        "active_provider_sha256": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "load_order_index": {"type": "integer", "minimum": 0, "maximum": 2147483647}, "source_path": {"$ref": "#/$defs/text"}, "content_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "restoration": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scope", "name", "restored_value", "overwritten_upstream_value", "vanilla_provider_id", "upstream_provider_id", "restoring_provider_id"],
+      "properties": {
+        "scope": {"enum": ["attribute", "children"]},
+        "name": {"$ref": "#/$defs/nullable_text"},
+        "restored_value": {"type": "string", "maxLength": 8192},
+        "overwritten_upstream_value": {"type": "string", "maxLength": 8192},
+        "vanilla_provider_id": {"$ref": "#/$defs/text"},
+        "upstream_provider_id": {"$ref": "#/$defs/text"},
+        "restoring_provider_id": {"$ref": "#/$defs/text"}
+      }
+    },
+    "record": {
+      "type": "object", "additionalProperties": false,
+      "required": ["record_key", "record_winner", "attribute_winners", "child_winners", "contributing_provider_ids", "upstream_restorations"],
+      "properties": {
+        "record_key": {"$ref": "#/$defs/record_key"},
+        "record_winner": {"$ref": "#/$defs/provider_citation"},
+        "attribute_winners": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/attribute_winner"}},
+        "child_winners": {"type": "array", "maxItems": 100000, "items": {"$ref": "#/$defs/child_winner"}},
+        "contributing_provider_ids": {"type": "array", "maxItems": 256, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+        "upstream_restorations": {"type": "array", "maxItems": 257, "items": {"$ref": "#/$defs/restoration"}}
+      }
+    },
+    "provider_document": {
+      "type": "object", "additionalProperties": false,
+      "required": ["provider_id", "provider_kind", "load_order_index", "source_path", "member_or_loose_path", "content_sha256", "game_build", "source_build"],
+      "properties": {
+        "provider_id": {"$ref": "#/$defs/text"}, "provider_kind": {"$ref": "#/$defs/text"},
+        "load_order_index": {"type": "integer", "minimum": 0}, "source_path": {"$ref": "#/$defs/text"},
+        "member_or_loose_path": {"$ref": "#/$defs/text"}, "content_sha256": {"$ref": "#/$defs/sha256"},
+        "game_build": {"$ref": "#/$defs/text"}, "source_build": {"$ref": "#/$defs/text"}
+      }
+    },
+    "duplicate_row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["record_key", "provider_id", "row_indices", "count"],
+      "properties": {
+        "record_key": {"$ref": "#/$defs/record_key"}, "provider_id": {"$ref": "#/$defs/text"},
+        "row_indices": {"type": "array", "minItems": 2, "maxItems": 20000, "uniqueItems": true, "items": {"type": "integer", "minimum": 0}},
+        "count": {"type": "integer", "minimum": 2, "maximum": 20000}
+      }
+    },
+    "reference_issue": {
+      "type": "object", "additionalProperties": false, "required": ["reference_id", "classification"],
+      "properties": {"reference_id": {"$ref": "#/$defs/text"}, "classification": {"$ref": "#/$defs/reference_classification"}}
+    },
+    "table": {
+      "type": "object", "additionalProperties": false,
+      "required": ["canonical_path", "profile_id", "table_type", "semantics_status", "reason_codes", "provider_documents", "semantic_comparison", "records", "duplicate_rows", "reference_issues"],
+      "properties": {
+        "canonical_path": {"$ref": "#/$defs/text"}, "profile_id": {"$ref": "#/$defs/text"},
+        "table_type": {"enum": ["old", "new", "unsupported_replace_only", "do_not_change", "unused", "unknown"]},
+        "semantics_status": {"enum": ["resolved", "unresolved", "capture_inconclusive"]},
+        "reason_codes": {"$ref": "#/$defs/reason_codes"},
+        "provider_documents": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/provider_document"}},
+        "semantic_comparison": {
+          "type": "object", "additionalProperties": false, "required": ["mode", "plain_xml_diff_sufficient", "restoration_count"],
+          "properties": {"mode": {"const": "profile_proven_merge"}, "plain_xml_diff_sufficient": {"const": false}, "restoration_count": {"type": "integer", "minimum": 0}}
+        },
+        "records": {"type": "array", "maxItems": 20000, "items": {"$ref": "#/$defs/record"}},
+        "duplicate_rows": {"type": "array", "maxItems": 20000, "items": {"$ref": "#/$defs/duplicate_row"}},
+        "reference_issues": {"type": "array", "maxItems": 20000, "items": {"$ref": "#/$defs/reference_issue"}}
+      }
+    },
+    "reference_classification": {"enum": ["resolved_active", "missing_globally", "missing_from_active_set", "available_only_in_dependency", "defined_by_later_mod", "defined_wrong_case", "ambiguous_duplicate_definition", "capture_inconclusive"]},
+    "matched_definition": {
+      "type": "object", "additionalProperties": false,
+      "required": ["definition_id", "defined_key", "provider_id", "active", "dependency", "load_order_index"],
+      "properties": {
+        "definition_id": {"$ref": "#/$defs/text"}, "defined_key": {"$ref": "#/$defs/text"}, "provider_id": {"$ref": "#/$defs/text"},
+        "active": {"type": "boolean"}, "dependency": {"type": "boolean"}, "load_order_index": {"type": "integer", "minimum": 0}
+      }
+    },
+    "resolution": {
+      "type": "object", "additionalProperties": false,
+      "required": ["reference_id", "family", "target", "classification", "reason_codes", "matched_definitions"],
+      "properties": {
+        "reference_id": {"$ref": "#/$defs/text"}, "family": {"enum": ["table", "localization", "asset", "lua", "quest", "xsd", "smart_object", "animation"]},
+        "target": {"$ref": "#/$defs/text"}, "classification": {"$ref": "#/$defs/reference_classification"},
+        "reason_codes": {"type": "array", "maxItems": 8, "items": {"$ref": "#/$defs/text"}},
+        "matched_definitions": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/matched_definition"}}
+      }
+    },
+    "reference_graph": {
+      "type": "object", "additionalProperties": false, "required": ["status", "graph", "resolutions"],
+      "properties": {
+        "status": {"enum": ["resolved", "issues_found", "capture_inconclusive"]},
+        "graph": {
+          "type": "object", "additionalProperties": false, "required": ["definitions", "references", "edges"],
+          "properties": {
+            "definitions": {"type": "array", "maxItems": 20000, "items": {"type": "object"}},
+            "references": {"type": "array", "maxItems": 20000, "items": {"type": "object"}},
+            "edges": {"type": "array", "maxItems": 100000, "items": {"type": "object"}}
+          }
+        },
+        "resolutions": {"type": "array", "maxItems": 20000, "items": {"$ref": "#/$defs/resolution"}}
+      }
+    }
+  },
+  "$comment": "TABLE-005 replaces the unimplemented summary-only draft with a bounded exact-provider audit. Existing draft examples require migration because the prior shape could not express provider provenance, semantic winners, reference classifications, restorations, or fail-closed coverage."
+}

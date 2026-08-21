@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/input-marker-capability-v1.schema.json",
+  "title": "KCD2 passive input marker capability receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "status",
+    "selected_route_id",
+    "evaluated_routes",
+    "safety_gate",
+    "blockers",
+    "routes"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.input-marker-capability.v1"},
+    "status": {"enum": ["available", "unavailable"]},
+    "selected_route_id": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "evaluated_routes": {"type": "integer", "minimum": 0, "maximum": 16},
+    "safety_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pass_through",
+        "action_map_unchanged",
+        "input_not_synthesized",
+        "input_not_consumed",
+        "metadata_only_markers",
+        "haptics_preserved",
+        "no_current_button_binding"
+      ],
+      "properties": {
+        "pass_through": {"type": "boolean"},
+        "action_map_unchanged": {"type": "boolean"},
+        "input_not_synthesized": {"type": "boolean"},
+        "input_not_consumed": {"type": "boolean"},
+        "metadata_only_markers": {"type": "boolean"},
+        "haptics_preserved": {"type": "boolean"},
+        "no_current_button_binding": {"type": "boolean"}
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "NO_CANDIDATE_ROUTE",
+          "OBSERVATION_NOT_PASS_THROUGH",
+          "ACTION_MAP_MUTATION_FORBIDDEN",
+          "INPUT_SYNTHESIS_FORBIDDEN",
+          "INPUT_CONSUMPTION_FORBIDDEN",
+          "MARKER_NOT_METADATA_ONLY",
+          "CURRENT_BUTTON_BINDING_FORBIDDEN",
+          "TRANSITION_OBSERVATION_UNPROVEN",
+          "HAPTICS_PRESERVATION_UNPROVEN"
+        ]
+      }
+    },
+    "routes": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["route_id", "eligible", "blockers"],
+        "properties": {
+          "route_id": {"type": "string", "minLength": 1, "maxLength": 256},
+          "eligible": {"type": "boolean"},
+          "blockers": {
+            "type": "array",
+            "maxItems": 8,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "OBSERVATION_NOT_PASS_THROUGH",
+                "ACTION_MAP_MUTATION_FORBIDDEN",
+                "INPUT_SYNTHESIS_FORBIDDEN",
+                "INPUT_CONSUMPTION_FORBIDDEN",
+                "MARKER_NOT_METADATA_ONLY",
+                "CURRENT_BUTTON_BINDING_FORBIDDEN",
+                "TRANSITION_OBSERVATION_UNPROVEN",
+                "HAPTICS_PRESERVATION_UNPROVEN"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

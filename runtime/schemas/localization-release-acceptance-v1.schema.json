@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/localization-release-acceptance-v1.schema.json",
+  "title": "KCD2 localization, dialog, and asset release acceptance",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "release_id", "input_sha256", "candidate_provider_id",
+    "status", "verdict", "release_allowed", "reason_codes", "permitted_claims",
+    "localization_audit", "package_isolation", "duration_validation",
+    "runtime_evidence", "diagnostics", "counts", "bounds"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.localization-release-acceptance.v1"},
+    "release_id": {"$ref": "#/$defs/text"},
+    "input_sha256": {"$ref": "#/$defs/sha256"},
+    "candidate_provider_id": {"$ref": "#/$defs/text"},
+    "status": {"enum": ["accepted", "rejected", "capture_inconclusive"]},
+    "verdict": {"enum": ["VALID", "INVALID", "INCONCLUSIVE"]},
+    "release_allowed": {"type": "boolean"},
+    "reason_codes": {
+      "type": "array", "maxItems": 8, "uniqueItems": true,
+      "items": {"enum": [
+        "DIAGNOSTICS_TRUNCATED", "LOCALIZATION_AUDIT_ISSUES",
+        "PARTIAL_LANGUAGE_COVERAGE", "RUNTIME_CAPTURE_INCOMPLETE",
+        "RUNTIME_CORRELATION_INVALID"
+      ]}
+    },
+    "permitted_claims": {
+      "type": "array", "maxItems": 8, "uniqueItems": true,
+      "items": {"enum": [
+        "language_packages_isolated", "required_localization_links_resolved",
+        "runtime_displayed_resources_observed", "runtime_fallback_explicit",
+        "subtitle_audio_durations_within_tolerance"
+      ]}
+    },
+    "localization_audit": {"$ref": "#/$defs/auditSummary"},
+    "package_isolation": {
+      "type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/package"}
+    },
+    "duration_validation": {"$ref": "#/$defs/durationValidation"},
+    "runtime_evidence": {"$ref": "#/$defs/runtimeEvidence"},
+    "diagnostics": {
+      "type": "array", "maxItems": 60000, "items": {"$ref": "#/$defs/diagnostic"}
+    },
+    "counts": {"$ref": "#/$defs/counts"},
+    "bounds": {"$ref": "#/$defs/bounds"}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 2048},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "auditSummary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["snapshot_id", "input_sha256", "status", "verdict", "no_conflict_claim_allowed"],
+      "properties": {
+        "snapshot_id": {"$ref": "#/$defs/text"},
+        "input_sha256": {"$ref": "#/$defs/sha256"},
+        "status": {"enum": ["resolved", "issues_found", "capture_inconclusive"]},
+        "verdict": {"enum": ["VALID", "INVALID", "INCONCLUSIVE"]},
+        "no_conflict_claim_allowed": {"type": "boolean"}
+      }
+    },
+    "package": {
+      "type": "object", "additionalProperties": false,
+      "required": ["package_path", "mount_id", "language", "provider_id", "contained_languages", "isolated", "audit_mount_matched"],
+      "properties": {
+        "package_path": {"$ref": "#/$defs/text"},
+        "mount_id": {"$ref": "#/$defs/text"},
+        "language": {"$ref": "#/$defs/text"},
+        "provider_id": {"$ref": "#/$defs/text"},
+        "contained_languages": {"type": "array", "maxItems": 256, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+        "isolated": {"type": "boolean"},
+        "audit_mount_matched": {"type": "boolean"}
+      }
+    },
+    "durationCheck": {
+      "type": "object", "additionalProperties": false,
+      "required": ["dialog_id", "subtitle_duration_ms", "audio_duration_ms", "delta_ms", "matched"],
+      "properties": {
+        "dialog_id": {"$ref": "#/$defs/text"},
+        "subtitle_duration_ms": {"type": "integer", "minimum": 0, "maximum": 3600000},
+        "audio_duration_ms": {"type": "integer", "minimum": 0, "maximum": 3600000},
+        "delta_ms": {"type": "integer", "minimum": 0, "maximum": 3600000},
+        "matched": {"type": "boolean"}
+      }
+    },
+    "durationValidation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["enabled", "tolerance_ms", "status", "checks"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "tolerance_ms": {"type": "integer", "minimum": 0, "maximum": 600000},
+        "status": {"enum": ["not_requested", "passed", "failed"]},
+        "checks": {"type": "array", "maxItems": 20000, "items": {"$ref": "#/$defs/durationCheck"}}
+      }
+    },
+    "fallback": {
+      "type": "object", "additionalProperties": false,
+      "required": ["from_resource_id", "reason", "to_resource_id", "winner_provider_id"],
+      "properties": {
+        "from_resource_id": {"$ref": "#/$defs/text"},
+        "reason": {"$ref": "#/$defs/text"},
+        "to_resource_id": {"$ref": "#/$defs/text"},
+        "winner_provider_id": {"$ref": "#/$defs/text"}
+      }
+    },
+    "observation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["dialog_id", "language", "displayed_key", "displayed_provider_id", "voice_filename", "voice_provider_id", "resolution", "fallback", "audit_links_matched"],
+      "properties": {
+        "dialog_id": {"$ref": "#/$defs/text"},
+        "language": {"$ref": "#/$defs/text"},
+        "displayed_key": {"$ref": "#/$defs/text"},
+        "displayed_provider_id": {"$ref": "#/$defs/text"},
+        "voice_filename": {"$ref": "#/$defs/text"},
+        "voice_provider_id": {"$ref": "#/$defs/text"},
+        "resolution": {"enum": ["exact", "fallback"]},
+        "fallback": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/fallback"}]},
+        "audit_links_matched": {"type": "boolean"}
+      }
+    },
+    "runtimeEvidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["capture_complete", "correlation_valid", "status", "observations"],
+      "properties": {
+        "capture_complete": {"type": "boolean"},
+        "correlation_valid": {"type": "boolean"},
+        "status": {"enum": ["matched", "mismatched", "inconclusive"]},
+        "observations": {"type": "array", "maxItems": 20000, "items": {"$ref": "#/$defs/observation"}}
+      }
+    },
+    "diagnostic": {
+      "type": "object", "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {"enum": [
+          "CROSS_LANGUAGE_PACKAGE_CONTENT", "MISSING_DURATION_CHECK",
+          "MISSING_LANGUAGE_PACKAGE", "MISSING_REQUIRED_DIALOG",
+          "MISSING_REQUIRED_KEY", "MISSING_REQUIRED_LANGUAGE",
+          "MISSING_RUNTIME_DISPLAY_EVIDENCE", "PACKAGE_MOUNT_MISMATCH",
+          "RUNTIME_RESOURCE_MISMATCH", "SUBTITLE_AUDIO_DURATION_MISMATCH",
+          "UNRESOLVED_DIALOG_TRANSLATION", "UNRESOLVED_DIALOG_VOICE"
+        ]},
+        "message": {"$ref": "#/$defs/text"},
+        "language": {"$ref": "#/$defs/text"},
+        "key": {"$ref": "#/$defs/text"},
+        "dialog_id": {"$ref": "#/$defs/text"},
+        "package_path": {"$ref": "#/$defs/text"}
+      }
+    },
+    "counts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["required_languages", "required_keys", "required_dialogs", "packages_checked", "isolated_packages", "duration_checks", "runtime_observations_checked", "explicit_fallbacks", "diagnostics_returned"],
+      "properties": {
+        "required_languages": {"type": "integer", "minimum": 0, "maximum": 256},
+        "required_keys": {"type": "integer", "minimum": 0, "maximum": 20000},
+        "required_dialogs": {"type": "integer", "minimum": 0, "maximum": 20000},
+        "packages_checked": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "isolated_packages": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "duration_checks": {"type": "integer", "minimum": 0, "maximum": 20000},
+        "runtime_observations_checked": {"type": "integer", "minimum": 0, "maximum": 20000},
+        "explicit_fallbacks": {"type": "integer", "minimum": 0, "maximum": 20000},
+        "diagnostics_returned": {"type": "integer", "minimum": 0, "maximum": 60000}
+      }
+    },
+    "bounds": {
+      "type": "object", "additionalProperties": false,
+      "required": ["maximum_languages", "maximum_keys", "maximum_dialogs", "maximum_packages", "maximum_runtime_observations", "maximum_diagnostics"],
+      "properties": {
+        "maximum_languages": {"type": "integer", "minimum": 1, "maximum": 256},
+        "maximum_keys": {"type": "integer", "minimum": 1, "maximum": 20000},
+        "maximum_dialogs": {"type": "integer", "minimum": 1, "maximum": 20000},
+        "maximum_packages": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "maximum_runtime_observations": {"type": "integer", "minimum": 1, "maximum": 20000},
+        "maximum_diagnostics": {"type": "integer", "minimum": 1, "maximum": 60000}
+      }
+    }
+  }
+}

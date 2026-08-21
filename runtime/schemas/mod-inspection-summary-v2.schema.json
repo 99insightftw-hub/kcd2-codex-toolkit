@@ -1,0 +1,284 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/mod-inspection-summary-v2.schema.json",
+  "title": "KCD2 compact exact-mod inspection summary v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "target_mod_id",
+    "detail_level",
+    "provider_state",
+    "manifest",
+    "paks",
+    "package_profile",
+    "mod_order",
+    "active_state",
+    "effective_winners",
+    "scope_receipt_id",
+    "diagnostics",
+    "recommended_next_operation",
+    "coverage_validity",
+    "conflict_summary"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.mod-inspection-summary.v2"
+    },
+    "target_mod_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "detail_level": {
+      "enum": [
+        "compact",
+        "normal",
+        "full"
+      ]
+    },
+    "provider_state": {
+      "enum": [
+        "LOCAL_PRESENT",
+        "WORKSHOP_PRESENT",
+        "LOCAL_AND_WORKSHOP_PRESENT",
+        "POSSIBLY_WORKSHOP_MANAGED",
+        "MISSING_CONFIRMED",
+        "WORKSHOP_COVERAGE_STALE"
+      ]
+    },
+    "manifest": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9A-Fa-f]{64}$"
+        },
+        "mod_id_matches_folder": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "mod_id_matches_folder"
+      ]
+    },
+    "paks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "sha256",
+          "container_valid"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9A-Fa-f]{64}$"
+          },
+          "container_valid": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "package_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "verdict"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "retail_stored",
+            "lineage_inherited",
+            "inspect_only",
+            "custom_declared",
+            "unknown"
+          ]
+        },
+        "verdict": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "PROFILE_MISMATCH",
+            "UNKNOWN"
+          ]
+        },
+        "recommended_profile": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "mod_order": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entry_count",
+        "state"
+      ],
+      "properties": {
+        "entry_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "state": {
+          "enum": [
+            "EXACTLY_ONE",
+            "ABSENT",
+            "DUPLICATE",
+            "NOT_CHECKED"
+          ]
+        }
+      }
+    },
+    "active_state": {
+      "enum": [
+        "ACTIVE_CONFIRMED",
+        "INACTIVE_CONFIRMED",
+        "UNKNOWN"
+      ]
+    },
+    "effective_winners": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resolved",
+        "unresolved"
+      ],
+      "properties": {
+        "resolved": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unresolved": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "scope_receipt_id": {
+      "type": "string"
+    },
+    "detail_artifact": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9A-Fa-f]{64}$"
+        },
+        "cursor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "cursor"
+      ]
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "recommended_next_operation": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "coverage_validity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "coverage_id",
+        "overall_status",
+        "absence_claim_allowed",
+        "winner_claim_allowed"
+      ],
+      "properties": {
+        "coverage_id": {
+          "type": "string"
+        },
+        "overall_status": {
+          "enum": [
+            "COMPLETE",
+            "COMPLETE_FOR_REQUESTED_SCOPE",
+            "PARTIAL_LIMIT_REACHED",
+            "PARTIAL_STALE",
+            "INCONCLUSIVE",
+            "UNAVAILABLE"
+          ]
+        },
+        "absence_claim_allowed": {
+          "type": "boolean"
+        },
+        "winner_claim_allowed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "conflict_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observed_count",
+        "ignored_provider_metadata_count",
+        "conclusion",
+        "absence_claim_valid"
+      ],
+      "properties": {
+        "observed_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ignored_provider_metadata_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "conclusion": {
+          "enum": [
+            "CONFLICTS_OBSERVED",
+            "CONFIRMED_NONE",
+            "ZERO_OBSERVED_PARTIAL_COVERAGE",
+            "ZERO_OBSERVED_STALE_COVERAGE",
+            "INCONCLUSIVE",
+            "NOT_EVALUATED"
+          ]
+        },
+        "absence_claim_valid": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kcd2.local/schemas/lua-binding-catalog-v1.schema.json",
+  "title": "KCD2 Lua/entity/RTTR binding catalog v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "provider",
+    "coverage",
+    "diagnostics",
+    "diagnostics_truncated",
+    "records"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.lua-binding-catalog.v1"},
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider_id", "revision", "supported_domains", "runtime_input_state"],
+      "properties": {
+        "provider_id": {"const": "lua-entity-rttr-bindings"},
+        "revision": {"const": "1.0.0"},
+        "supported_domains": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {"enum": ["lua", "entity", "rttr"]}
+        },
+        "runtime_input_state": {"const": "NOT_OBSERVED"}
+      }
+    },
+    "coverage": {"$ref": "#/$defs/coverage"},
+    "diagnostics": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {"$ref": "#/$defs/diagnostic"}
+    },
+    "diagnostics_truncated": {"type": "boolean"},
+    "records": {
+      "type": "array",
+      "maxItems": 50000,
+      "items": {"$ref": "#/$defs/record"}
+    }
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 8192},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "git_id": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "layered_value": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "value", "reason"],
+      "properties": {
+        "state": {"enum": ["DOCUMENTED", "UNKNOWN"]},
+        "value": {},
+        "reason": {"type": ["string", "null"], "maxLength": 1024}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_uri",
+        "commit",
+        "root_tree",
+        "subtree_tree",
+        "path",
+        "sha256",
+        "byte_size",
+        "documentation_layer"
+      ],
+      "properties": {
+        "source_uri": {"$ref": "#/$defs/text"},
+        "commit": {"$ref": "#/$defs/git_id"},
+        "root_tree": {"$ref": "#/$defs/git_id"},
+        "subtree_tree": {"$ref": "#/$defs/git_id"},
+        "path": {"$ref": "#/$defs/text"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "byte_size": {"type": "integer", "minimum": 0, "maximum": 8388608},
+        "documentation_layer": {"const": "SCRIPTBIND_DOCUMENTATION"}
+      }
+    },
+    "native_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_id",
+        "section",
+        "basis",
+        "module_sha256",
+        "locator_kind",
+        "rva",
+        "module_offset",
+        "exact_locator",
+        "export_path",
+        "export_sha256",
+        "evidence_locators"
+      ],
+      "properties": {
+        "record_id": {"$ref": "#/$defs/text"},
+        "section": {"$ref": "#/$defs/text"},
+        "basis": {"enum": ["identity", "registration"]},
+        "module_sha256": {"$ref": "#/$defs/sha256"},
+        "locator_kind": {"enum": ["rva", "module_offset"]},
+        "rva": {"type": ["integer", "null"], "minimum": 0},
+        "module_offset": {"type": ["integer", "null"], "minimum": 0},
+        "exact_locator": {"$ref": "#/$defs/text"},
+        "export_path": {"$ref": "#/$defs/text"},
+        "export_sha256": {"$ref": "#/$defs/sha256"},
+        "evidence_locators": {
+          "type": "array",
+          "maxItems": 128,
+          "items": {"$ref": "#/$defs/text"}
+        }
+      }
+    },
+    "static_registration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "basis", "evidence", "reason"],
+      "properties": {
+        "state": {"enum": ["STATIC_REGISTERED", "NOT_OBSERVED"]},
+        "basis": {"type": ["string", "null"], "enum": ["identity", "registration", null]},
+        "evidence": {
+          "type": "array",
+          "maxItems": 128,
+          "items": {"$ref": "#/$defs/native_evidence"}
+        },
+        "reason": {"type": ["string", "null"], "maxLength": 1024}
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "receiver_compatibility",
+        "callability",
+        "instance_compatibility",
+        "observations"
+      ],
+      "properties": {
+        "receiver_compatibility": {"const": "UNKNOWN"},
+        "callability": {"const": "NOT_OBSERVED"},
+        "instance_compatibility": {"const": "UNKNOWN"},
+        "observations": {"type": "array", "maxItems": 0}
+      }
+    },
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_id",
+        "symbol",
+        "binding_owner",
+        "api_layers",
+        "receiver_type",
+        "signature",
+        "range",
+        "documented_calls",
+        "vanilla_call_observation",
+        "static_registration",
+        "runtime",
+        "source"
+      ],
+      "properties": {
+        "record_id": {"type": "string", "pattern": "^scriptbind:[0-9a-f]{64}$"},
+        "symbol": {"$ref": "#/$defs/text"},
+        "binding_owner": {"$ref": "#/$defs/text"},
+        "api_layers": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {"enum": ["DOCUMENTED", "STATIC_REGISTERED"]}
+        },
+        "receiver_type": {"$ref": "#/$defs/layered_value"},
+        "signature": {"$ref": "#/$defs/layered_value"},
+        "range": {"$ref": "#/$defs/layered_value"},
+        "documented_calls": {
+          "type": "array",
+          "maxItems": 128,
+          "items": {"$ref": "#/$defs/text"}
+        },
+        "vanilla_call_observation": {"const": "NOT_OBSERVED"},
+        "static_registration": {"$ref": "#/$defs/static_registration"},
+        "runtime": {"$ref": "#/$defs/runtime"},
+        "source": {"$ref": "#/$defs/source"}
+      }
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "path", "documented_title", "filename_symbol", "resolution"],
+      "properties": {
+        "code": {"const": "DOC_TITLE_MISMATCH"},
+        "path": {"$ref": "#/$defs/text"},
+        "documented_title": {"type": ["string", "null"], "maxLength": 8192},
+        "filename_symbol": {"$ref": "#/$defs/text"},
+        "resolution": {"const": "exact_cpp_signature_symbol"}
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "completeness",
+        "files_considered",
+        "bytes_considered",
+        "eligible_method_files",
+        "records_emitted",
+        "signatures_parsed",
+        "documented_calls_parsed",
+        "receiver_types_parsed",
+        "ranges_parsed",
+        "static_matches",
+        "runtime_observations",
+        "exclusions"
+      ],
+      "properties": {
+        "completeness": {"const": "complete"},
+        "files_considered": {"type": "integer", "minimum": 0, "maximum": 100000},
+        "bytes_considered": {"type": "integer", "minimum": 0, "maximum": 268435456},
+        "eligible_method_files": {"type": "integer", "minimum": 0, "maximum": 50000},
+        "records_emitted": {"type": "integer", "minimum": 0, "maximum": 50000},
+        "signatures_parsed": {"type": "integer", "minimum": 0, "maximum": 50000},
+        "documented_calls_parsed": {"type": "integer", "minimum": 0, "maximum": 50000},
+        "receiver_types_parsed": {"type": "integer", "minimum": 0, "maximum": 50000},
+        "ranges_parsed": {"type": "integer", "minimum": 0, "maximum": 50000},
+        "static_matches": {"type": "integer", "minimum": 0, "maximum": 50000},
+        "runtime_observations": {"const": 0},
+        "exclusions": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["reason", "files"],
+            "properties": {
+              "reason": {"const": "not_an_exact_method_page"},
+              "files": {"type": "integer", "minimum": 0, "maximum": 100000}
+            }
+          }
+        }
+      }
+    }
+  }
+}

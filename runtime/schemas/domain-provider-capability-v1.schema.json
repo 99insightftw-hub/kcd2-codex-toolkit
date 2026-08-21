@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/domain-provider-capability-v1.schema.json",
+  "title": "KCD2 domain provider capability",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "provider_id",
+    "revision",
+    "domains",
+    "supported_operations",
+    "coverage_model",
+    "claim_permissions"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.domain-provider-capability.v1"
+    },
+    "provider_id": {
+      "type": "string"
+    },
+    "revision": {
+      "type": "string"
+    },
+    "domains": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "supported_operations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "coverage_model": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "claim_permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "presence",
+        "absence",
+        "winner",
+        "runtime_execution"
+      ],
+      "properties": {
+        "presence": {
+          "type": "boolean"
+        },
+        "absence": {
+          "type": "boolean"
+        },
+        "winner": {
+          "type": "boolean"
+        },
+        "runtime_execution": {
+          "type": "boolean"
+        }
+      }
+    },
+    "source_revision": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "blocked_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

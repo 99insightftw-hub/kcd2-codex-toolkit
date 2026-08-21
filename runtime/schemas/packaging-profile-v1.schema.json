@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/packaging-profile-v1.schema.json",
+  "title": "KCD2 packaging profile v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile_id",
+    "profile_kind",
+    "profile_source",
+    "allowed_methods",
+    "member_ledger_required"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.packaging-profile.v1"
+    },
+    "profile_id": {
+      "type": "string",
+      "pattern": "^profile:[A-Za-z0-9._:-]+$"
+    },
+    "profile_kind": {
+      "enum": [
+        "retail_stored",
+        "lineage_inherited",
+        "inspect_only",
+        "custom_declared"
+      ]
+    },
+    "profile_source": {
+      "enum": [
+        "project_policy",
+        "parent_artifact",
+        "operator_declaration",
+        "inspection_only"
+      ]
+    },
+    "allowed_methods": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "stored",
+          "deflate"
+        ]
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "parent_pak_sha256": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9A-Fa-f]{64}$"
+    },
+    "parent_profile_sha256": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9A-Fa-f]{64}$"
+    },
+    "member_ledger_required": {
+      "type": "boolean"
+    },
+    "undeclared_method_change_fails": {
+      "type": "boolean",
+      "default": true
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "profile_kind": {
+            "const": "lineage_inherited"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "parent_pak_sha256",
+          "parent_profile_sha256"
+        ],
+        "properties": {
+          "parent_pak_sha256": {
+            "type": "string",
+            "pattern": "^[0-9A-Fa-f]{64}$"
+          },
+          "parent_profile_sha256": {
+            "type": "string",
+            "pattern": "^[0-9A-Fa-f]{64}$"
+          },
+          "member_ledger_required": {
+            "const": true
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "profile_kind": {
+            "const": "retail_stored"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "allowed_methods": {
+            "const": [
+              "stored"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

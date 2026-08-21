@@ -1,0 +1,220 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/synchronized-gameplay-timeline-v1.schema.json",
+  "title": "KCD2 synchronized gameplay timeline v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "session_id",
+    "investigation_id",
+    "ordering",
+    "clock_model",
+    "source_limits",
+    "events",
+    "uncertain_order_intervals",
+    "source_completeness",
+    "summary"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.synchronized-gameplay-timeline.v1"},
+    "session_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "investigation_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "ordering": {"const": "PARTIAL_ORDER"},
+    "clock_model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary_clock", "sources"],
+      "properties": {
+        "primary_clock": {"const": "session_monotonic_ns"},
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {"$ref": "#/$defs/clock_source"}
+        }
+      }
+    },
+    "source_limits": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {"$ref": "#/$defs/source_limit"}
+    },
+    "events": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {"$ref": "#/$defs/event"}
+    },
+    "uncertain_order_intervals": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {"$ref": "#/$defs/uncertain_interval"}
+    },
+    "source_completeness": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {"$ref": "#/$defs/source_completeness"}
+    },
+    "summary": {"$ref": "#/$defs/summary"}
+  },
+  "$defs": {
+    "name": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"},
+    "bounded_text": {"type": "string", "minLength": 1, "maxLength": 256},
+    "count": {"type": "integer", "minimum": 0, "maximum": 1000000000},
+    "timestamp": {
+      "type": ["integer", "null"],
+      "minimum": -9223372036854775807,
+      "maximum": 9223372036854775807
+    },
+    "clock_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "clock_id",
+        "sync_method",
+        "offset_ns",
+        "uncertainty_ns",
+        "jitter_ns",
+        "drift_ppm",
+        "quality"
+      ],
+      "properties": {
+        "source": {"$ref": "#/$defs/name"},
+        "clock_id": {"$ref": "#/$defs/name"},
+        "sync_method": {
+          "enum": ["shared_monotonic", "measured_offset", "marker_alignment", "unsynchronized"]
+        },
+        "offset_ns": {"$ref": "#/$defs/timestamp"},
+        "uncertainty_ns": {"type": ["integer", "null"], "minimum": 0, "maximum": 1000000000000},
+        "jitter_ns": {"type": "integer", "minimum": 0, "maximum": 1000000000000},
+        "drift_ppm": {"type": "number", "minimum": 0, "maximum": 1000000},
+        "quality": {"enum": ["EXACT", "ESTIMATED", "UNSYNCHRONIZED"]}
+      }
+    },
+    "source_limit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "maximum_events",
+        "maximum_bytes",
+        "maximum_fields",
+        "maximum_string_length",
+        "maximum_duration_ns",
+        "maximum_rate_per_second"
+      ],
+      "properties": {
+        "source": {"$ref": "#/$defs/name"},
+        "maximum_events": {"type": "integer", "minimum": 1, "maximum": 100000},
+        "maximum_bytes": {"type": "integer", "minimum": 1, "maximum": 67108864},
+        "maximum_fields": {"type": "integer", "minimum": 1, "maximum": 256},
+        "maximum_string_length": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "maximum_duration_ns": {"type": "integer", "minimum": 1, "maximum": 86400000000000},
+        "maximum_rate_per_second": {"type": "integer", "minimum": 1, "maximum": 100000}
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "source",
+        "sequence",
+        "source_clock_id",
+        "monotonic_ns",
+        "session_time_lower_ns",
+        "session_time_upper_ns",
+        "event_family",
+        "event_type",
+        "fields"
+      ],
+      "properties": {
+        "event_id": {"$ref": "#/$defs/bounded_text"},
+        "source": {"$ref": "#/$defs/name"},
+        "sequence": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807},
+        "source_clock_id": {"$ref": "#/$defs/name"},
+        "monotonic_ns": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807},
+        "session_time_lower_ns": {"$ref": "#/$defs/timestamp"},
+        "session_time_upper_ns": {"$ref": "#/$defs/timestamp"},
+        "event_family": {
+          "enum": [
+            "SESSION", "ENVIRONMENT", "DEPLOYMENT", "CLOCK", "TEST", "ATTEMPT",
+            "INPUT", "ACTION", "STATE", "UI", "ANIMATION", "PROBE", "USER_MARKER",
+            "VIDEO", "PROCESS", "CLEANUP", "DOMAIN"
+          ]
+        },
+        "event_type": {"$ref": "#/$defs/name"},
+        "fields": {
+          "type": "object",
+          "maxProperties": 256,
+          "propertyNames": {"$ref": "#/$defs/name"},
+          "additionalProperties": {}
+        }
+      }
+    },
+    "uncertain_interval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["interval_id", "lower_ns", "upper_ns", "event_ids", "reason"],
+      "properties": {
+        "interval_id": {"$ref": "#/$defs/bounded_text"},
+        "lower_ns": {"$ref": "#/$defs/timestamp"},
+        "upper_ns": {"$ref": "#/$defs/timestamp"},
+        "event_ids": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 100000,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/bounded_text"}
+        },
+        "reason": {"enum": ["overlapping_clock_uncertainty", "unsynchronized_source"]}
+      }
+    },
+    "source_completeness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source", "state", "observed_events", "accepted_events", "accepted_bytes",
+        "dropped_events", "malformed_events", "truncated_fields", "truncated_strings",
+        "redacted_values", "saturated"
+      ],
+      "properties": {
+        "source": {"$ref": "#/$defs/name"},
+        "state": {"enum": ["COMPLETE", "PARTIAL", "UNAVAILABLE", "INCONCLUSIVE"]},
+        "observed_events": {"$ref": "#/$defs/count"},
+        "accepted_events": {"$ref": "#/$defs/count"},
+        "accepted_bytes": {"type": "integer", "minimum": 0, "maximum": 67108864},
+        "dropped_events": {"$ref": "#/$defs/count"},
+        "malformed_events": {"$ref": "#/$defs/count"},
+        "truncated_fields": {"$ref": "#/$defs/count"},
+        "truncated_strings": {"$ref": "#/$defs/count"},
+        "redacted_values": {"$ref": "#/$defs/count"},
+        "saturated": {"type": "boolean"}
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "valid_for_claims", "unknown_intervals", "sanitization"],
+      "properties": {
+        "status": {"enum": ["complete", "capture_inconclusive"]},
+        "valid_for_claims": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/bounded_text"}
+        },
+        "unknown_intervals": {
+          "type": "array",
+          "maxItems": 100000,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/bounded_text"}
+        },
+        "sanitization": {"const": "SANITIZED"}
+      }
+    }
+  }
+}

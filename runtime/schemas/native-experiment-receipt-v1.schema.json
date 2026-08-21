@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/native-experiment-receipt-v1.schema.json",
+  "title": "KCD2 native experiment controller receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "receipt_id",
+    "receipt_sha256",
+    "experiment_id",
+    "sequence",
+    "mode",
+    "stage",
+    "status",
+    "identity_id",
+    "cross_tool_identity",
+    "previous_receipt_sha256",
+    "evidence_receipt_ids",
+    "approval_id",
+    "approval_operation",
+    "approval_binding_sha256",
+    "readiness_status",
+    "debugger_state",
+    "failure_code",
+    "recorded_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.native-experiment-receipt.v1"
+    },
+    "receipt_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "receipt_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "experiment_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000
+    },
+    "mode": {
+      "enum": ["current", "legacy_audit"]
+    },
+    "stage": {
+      "enum": [
+        "CREATED",
+        "FINGERPRINT_VERIFIED",
+        "STATIC_EVIDENCE_VERIFIED",
+        "MANIFEST_SOURCE_VERIFIED",
+        "DOUBLE_BUILD_VERIFIED",
+        "DLL_DESCRIPTOR_VERIFIED",
+        "INSTALL_APPROVED",
+        "INSTALLED",
+        "DEBUGGER_READY",
+        "HANDOFF_READY",
+        "CAPTURED",
+        "IMPORTED",
+        "INTERPRETED",
+        "CLEANUP_APPROVED",
+        "CLEANUP_VERIFIED",
+        "FAILED"
+      ]
+    },
+    "status": {
+      "enum": ["PASS", "FAILED"]
+    },
+    "identity_id": {
+      "type": "string",
+      "pattern": "^identity:sha256:[0-9a-f]{64}$"
+    },
+    "cross_tool_identity": {
+      "$ref": "cross-tool-identity-v1.schema.json"
+    },
+    "previous_receipt_sha256": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "evidence_receipt_ids": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "approval_id": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "approval_operation": {
+      "type": ["string", "null"],
+      "enum": ["deploy_native_component", "rollback", null]
+    },
+    "approval_binding_sha256": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "readiness_status": {
+      "type": ["string", "null"],
+      "enum": ["READY", null]
+    },
+    "debugger_state": {
+      "type": ["string", "null"],
+      "enum": ["connected_running", null]
+    },
+    "failure_code": {
+      "type": ["string", "null"],
+      "pattern": "^[A-Z][A-Z0-9_]{0,127}$"
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"status": {"const": "FAILED"}},
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "stage": {"const": "FAILED"},
+          "failure_code": {"type": "string"}
+        }
+      },
+      "else": {
+        "properties": {"failure_code": {"type": "null"}}
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "stage": {"enum": ["INSTALL_APPROVED", "CLEANUP_APPROVED"]}
+        },
+        "required": ["stage"]
+      },
+      "then": {
+        "properties": {
+          "approval_id": {"type": "string"},
+          "approval_binding_sha256": {"type": "string"}
+        }
+      }
+    }
+  ]
+}

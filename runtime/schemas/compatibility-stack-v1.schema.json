@@ -1,0 +1,268 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/compatibility-stack-v1.schema.json",
+  "title": "KCD2 exact-identity compatibility stack v1",
+  "description": "COMPAT-001 versioned, content-addressed acceptance fixture. Name-only project and variant lists from the reviewed draft require explicit migration bindings.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "stack_id",
+    "manifest_version",
+    "family",
+    "members",
+    "selected_variants",
+    "composite_declaration_ids",
+    "dependencies",
+    "excluded_project_ids",
+    "intended_winners",
+    "protected_resources",
+    "required_states",
+    "static_assertions",
+    "runtime_assertions",
+    "identity",
+    "coverage",
+    "result"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.compatibility-stack.v1"},
+    "stack_id": {
+      "type": "string",
+      "pattern": "^compatibility-stack:sha256:[0-9a-f]{64}$"
+    },
+    "manifest_version": {"type": "integer", "minimum": 1, "maximum": 1000000},
+    "family": {
+      "enum": [
+        "CORE_SCRIPTING",
+        "AI_WORLD",
+        "BALANCE_TABLE",
+        "UI_VISUAL_LOCALIZATION",
+        "ANIMATION_AUDIO_HAPTIC",
+        "CUSTOM"
+      ]
+    },
+    "members": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 256,
+      "items": {"$ref": "#/$defs/member"}
+    },
+    "selected_variants": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {"$ref": "#/$defs/selectedVariant"}
+    },
+    "composite_declaration_ids": {
+      "type": "array",
+      "maxItems": 4096,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/boundedId"}
+    },
+    "dependencies": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {"$ref": "#/$defs/dependency"}
+    },
+    "excluded_project_ids": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/projectId"}
+    },
+    "intended_winners": {
+      "type": "array",
+      "maxItems": 16384,
+      "items": {"$ref": "#/$defs/resourceDeclaration"}
+    },
+    "protected_resources": {
+      "type": "array",
+      "maxItems": 16384,
+      "items": {"$ref": "#/$defs/resourceDeclaration"}
+    },
+    "required_states": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {"$ref": "#/$defs/requiredState"}
+    },
+    "static_assertions": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {"$ref": "#/$defs/assertion"}
+    },
+    "runtime_assertions": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {"$ref": "#/$defs/assertion"}
+    },
+    "identity": {"$ref": "#/$defs/identity"},
+    "coverage": {"$ref": "#/$defs/coverage"},
+    "result": {"enum": ["PASS", "FAIL", "INCONCLUSIVE"]}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "projectId": {
+      "type": "string",
+      "pattern": "^project:sha256:[0-9a-f]{64}$"
+    },
+    "boundedId": {"type": "string", "minLength": 1, "maxLength": 256},
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^(?![A-Za-z]:)(?![/\\\\])(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$))[^\\u0000]+$"
+    },
+    "member": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "project_id",
+        "project_sha256",
+        "candidate_id",
+        "candidate_sha256"
+      ],
+      "properties": {
+        "project_id": {"$ref": "#/$defs/projectId"},
+        "project_sha256": {"$ref": "#/$defs/sha256"},
+        "candidate_id": {"$ref": "#/$defs/boundedId"},
+        "candidate_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "selectedVariant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_id", "selection_id", "selected_member_ids"],
+      "properties": {
+        "project_id": {"$ref": "#/$defs/projectId"},
+        "selection_id": {
+          "type": "string",
+          "pattern": "^variant-selection:sha256:[0-9a-f]{64}$"
+        },
+        "selected_member_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4096,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^variant-member:sha256:[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "dependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_id", "version", "artifact_sha256"],
+      "properties": {
+        "project_id": {"$ref": "#/$defs/projectId"},
+        "version": {"type": "string", "minLength": 1, "maxLength": 128},
+        "artifact_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "resourceDeclaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resource", "provider_project_id"],
+      "properties": {
+        "resource": {"$ref": "#/$defs/relativePath"},
+        "provider_project_id": {"$ref": "#/$defs/projectId"}
+      }
+    },
+    "evidenceIds": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/boundedId"}
+    },
+    "assertion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assertion_id", "status", "evidence_ids"],
+      "properties": {
+        "assertion_id": {"$ref": "#/$defs/boundedId"},
+        "status": {"enum": ["PASS", "FAIL", "INCONCLUSIVE", "NOT_RUN"]},
+        "evidence_ids": {"$ref": "#/$defs/evidenceIds"}
+      }
+    },
+    "requiredState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state_id", "state_type", "expected", "status", "evidence_ids"],
+      "properties": {
+        "state_id": {"$ref": "#/$defs/boundedId"},
+        "state_type": {
+          "enum": [
+            "GAME_BUILD",
+            "SAVE",
+            "LOCATION",
+            "NPC",
+            "ITEM",
+            "UI",
+            "MOUNT_CONTEXT",
+            "CONFIGURATION",
+            "CUSTOM"
+          ]
+        },
+        "expected": {"type": "string", "minLength": 1, "maxLength": 2048},
+        "status": {"enum": ["PASS", "FAIL", "INCONCLUSIVE", "NOT_RUN"]},
+        "evidence_ids": {"$ref": "#/$defs/evidenceIds"}
+      }
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "package_sha256",
+        "active_snapshot_id",
+        "runtime_session_ids",
+        "mod_order_sha256"
+      ],
+      "properties": {
+        "package_sha256": {"$ref": "#/$defs/sha256"},
+        "active_snapshot_id": {
+          "type": "string",
+          "pattern": "^active-snapshot:sha256:[0-9a-f]{64}$"
+        },
+        "runtime_session_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^runtime-session:sha256:[0-9a-f]{64}$"
+          }
+        },
+        "mod_order_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_id",
+        "provider_catalog_sha256",
+        "status",
+        "covered_resources",
+        "total_resources",
+        "reason_codes"
+      ],
+      "properties": {
+        "snapshot_id": {
+          "type": "string",
+          "pattern": "^active-snapshot:sha256:[0-9a-f]{64}$"
+        },
+        "provider_catalog_sha256": {"$ref": "#/$defs/sha256"},
+        "status": {"enum": ["COMPLETE", "PARTIAL", "INVALID"]},
+        "covered_resources": {"type": "integer", "minimum": 0, "maximum": 16384},
+        "total_resources": {"type": "integer", "minimum": 0, "maximum": 16384},
+        "reason_codes": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/boundedId"}
+        }
+      }
+    }
+  }
+}

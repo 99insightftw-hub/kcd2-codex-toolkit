@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/cross-tool-identity-v1.schema.json",
+  "title": "KCD2 cross-tool identity v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "identity_id",
+    "candidate_id",
+    "parent_id",
+    "source",
+    "build_spec_sha256",
+    "artifacts",
+    "manifest_sha256",
+    "native_components",
+    "mod_order_sha256",
+    "active_snapshot_id",
+    "game",
+    "receipt_ids"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.cross-tool-identity.v1"
+    },
+    "identity_id": {
+      "type": "string",
+      "pattern": "^identity:sha256:[0-9a-f]{64}$"
+    },
+    "candidate_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "parent_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "commit",
+        "tree_sha256"
+      ],
+      "properties": {
+        "commit": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "tree_sha256": {
+          "type": "string",
+          "pattern": "^[0-9A-Fa-f]{64}$"
+        }
+      }
+    },
+    "build_spec_sha256": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9A-Fa-f]{64}$"
+    },
+    "artifacts": {
+      "type": "array",
+      "maxItems": 8192,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "sha256"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9A-Fa-f]{64}$"
+          }
+        }
+      }
+    },
+    "manifest_sha256": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9A-Fa-f]{64}$"
+    },
+    "native_components": {
+      "type": "array",
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "component_id",
+          "sha256"
+        ],
+        "properties": {
+          "component_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9A-Fa-f]{64}$"
+          }
+        }
+      }
+    },
+    "mod_order_sha256": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9A-Fa-f]{64}$"
+    },
+    "active_snapshot_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "game": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "executable_sha256",
+        "whgame_sha256"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "executable_sha256": {
+          "type": "string",
+          "pattern": "^[0-9A-Fa-f]{64}$"
+        },
+        "whgame_sha256": {
+          "type": "string",
+          "pattern": "^[0-9A-Fa-f]{64}$"
+        }
+      }
+    },
+    "receipt_ids": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    }
+  }
+}

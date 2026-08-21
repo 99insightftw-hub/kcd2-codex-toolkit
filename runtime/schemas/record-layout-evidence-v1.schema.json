@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/record-layout-evidence-v1.schema.json",
+  "title": "KCD2 family-specific record-layout evidence v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "module_sha256",
+    "record_layout_evidence",
+    "identity_matchers"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.record-layout-evidence.v1"},
+    "module_sha256": {"$ref": "#/$defs/sha256"},
+    "record_layout_evidence": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "items": {"$ref": "#/$defs/layout"}
+    },
+    "identity_matchers": {
+      "type": "array",
+      "maxItems": 128,
+      "items": {"$ref": "#/$defs/identity_matcher"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+    "bounded_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "citation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_class", "record_family", "artifact", "locator", "claim"],
+      "properties": {
+        "evidence_class": {"enum": ["static", "runtime"]},
+        "record_family": {"$ref": "#/$defs/bounded_name"},
+        "artifact": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "locator": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "claim": {"type": "string", "minLength": 1, "maxLength": 2000}
+      }
+    },
+    "citations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "items": {"$ref": "#/$defs/citation"}
+    },
+    "corroboration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "evidence"],
+      "properties": {
+        "kind": {"enum": ["native_consumer", "repeated_positive_control"]},
+        "evidence": {"$ref": "#/$defs/citations"}
+      }
+    },
+    "discovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "known_value_id", "readable_span_bytes"],
+      "properties": {
+        "mode": {"const": "bounded_readable_span"},
+        "known_value_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "readable_span_bytes": {"type": "integer", "minimum": 1, "maximum": 4096}
+      }
+    },
+    "layout_field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field_id",
+        "offset",
+        "width",
+        "semantic_type",
+        "evidence",
+        "confidence",
+        "promotion_state"
+      ],
+      "properties": {
+        "field_id": {"$ref": "#/$defs/bounded_name"},
+        "offset": {"type": "string", "pattern": "^0x[A-Fa-f0-9]+$"},
+        "width": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "semantic_type": {
+          "enum": [
+            "fragment_guid",
+            "table_row_identity",
+            "record_pointer_ephemeral",
+            "database_index",
+            "dispatch_id",
+            "predicate_flag",
+            "predicate_value",
+            "target_mask",
+            "record_field",
+            "unknown_discovery_candidate"
+          ]
+        },
+        "evidence": {"$ref": "#/$defs/citations"},
+        "confidence": {"enum": ["confirmed", "high", "medium", "low", "unknown"]},
+        "promotion_state": {"enum": ["confirmed", "provisional_discovery", "rejected"]},
+        "discovery": {"$ref": "#/$defs/discovery"},
+        "corroboration": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {"$ref": "#/$defs/corroboration"}
+        }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["family", "module_sha256", "layout_profile_id", "fields"],
+      "properties": {
+        "family": {"$ref": "#/$defs/bounded_name"},
+        "module_sha256": {"$ref": "#/$defs/sha256"},
+        "layout_profile_id": {"$ref": "#/$defs/bounded_name"},
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {"$ref": "#/$defs/layout_field"}
+        }
+      }
+    },
+    "identity_matcher": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "matcher_id",
+        "identity_kind",
+        "mode",
+        "state",
+        "record_family",
+        "field_id",
+        "bounded_span_bytes",
+        "known_values",
+        "evidence"
+      ],
+      "properties": {
+        "matcher_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "identity_kind": {
+          "enum": [
+            "fragment_guid",
+            "table_row_identity",
+            "record_pointer_ephemeral",
+            "database_index",
+            "dispatch_id",
+            "known_value_span_discovery"
+          ]
+        },
+        "mode": {
+          "enum": [
+            "exact_field",
+            "bounded_readable_span",
+            "unfiltered_population",
+            "runtime_token"
+          ]
+        },
+        "state": {
+          "enum": ["confirmed_filter", "provisional_discovery", "unfiltered_observation"]
+        },
+        "record_family": {"$ref": "#/$defs/bounded_name"},
+        "field_id": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "bounded_span_bytes": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "known_values": {
+          "type": "array",
+          "maxItems": 128,
+          "items": {"type": "string", "minLength": 1, "maxLength": 1024}
+        },
+        "evidence": {"$ref": "#/$defs/citations"}
+      }
+    }
+  }
+}

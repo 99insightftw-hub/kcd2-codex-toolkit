@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/provider-inventory-v1.schema.json",
+  "title": "KCD2 approved-metadata provider inventory v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "inventory_id",
+    "evaluated_at",
+    "status",
+    "providers",
+    "coverage_envelope"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.provider-inventory.v1"},
+    "inventory_id": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "evaluated_at": {"type": "string", "format": "date-time"},
+    "status": {"enum": ["complete", "capture_inconclusive"]},
+    "providers": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {"$ref": "#/$defs/provider"}
+    },
+    "coverage_envelope": {"$ref": "#/$defs/coverage_envelope"}
+  },
+  "$defs": {
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_id",
+        "provider_kind",
+        "mod_id",
+        "provider_path",
+        "provider_sha256",
+        "metadata_id",
+        "metadata_captured_at",
+        "internal_paths",
+        "freshness"
+      ],
+      "properties": {
+        "provider_id": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "provider_kind": {"enum": ["vanilla", "local", "workshop"]},
+        "mod_id": {"type": ["string", "null"], "minLength": 1, "maxLength": 1024},
+        "provider_path": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "provider_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "metadata_id": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "metadata_captured_at": {"type": "string", "format": "date-time"},
+        "internal_paths": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8192,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 1024}
+        },
+        "freshness": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["fresh", "age_seconds", "max_age_seconds"],
+          "properties": {
+            "fresh": {"type": "boolean"},
+            "age_seconds": {"type": ["number", "null"], "minimum": 0},
+            "max_age_seconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2678400
+            }
+          }
+        }
+      }
+    },
+    "coverage_envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "coverage_id",
+        "basis",
+        "overall_status",
+        "presence_claim_allowed",
+        "absence_claim_allowed",
+        "winner_claim_allowed",
+        "conflict_absence_claim_allowed",
+        "reason_codes"
+      ],
+      "properties": {
+        "coverage_id": {"type": "string", "minLength": 1},
+        "basis": {
+          "enum": ["active_snapshot", "direct_exact_scan", "manual_contributions", "hybrid"]
+        },
+        "overall_status": {
+          "enum": [
+            "COMPLETE",
+            "COMPLETE_FOR_REQUESTED_SCOPE",
+            "PARTIAL_LIMIT_REACHED",
+            "PARTIAL_STALE",
+            "INCONCLUSIVE",
+            "UNAVAILABLE"
+          ]
+        },
+        "presence_claim_allowed": {"type": "boolean"},
+        "absence_claim_allowed": {"type": "boolean"},
+        "winner_claim_allowed": {"type": "boolean"},
+        "conflict_absence_claim_allowed": {"type": "boolean"},
+        "reason_codes": {
+          "type": "array",
+          "maxItems": 128,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 1024}
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "capture_inconclusive"}}},
+      "then": {
+        "properties": {
+          "coverage_envelope": {
+            "properties": {
+              "absence_claim_allowed": {"const": false},
+              "winner_claim_allowed": {"const": false},
+              "conflict_absence_claim_allowed": {"const": false}
+            }
+          }
+        }
+      }
+    }
+  ]
+}

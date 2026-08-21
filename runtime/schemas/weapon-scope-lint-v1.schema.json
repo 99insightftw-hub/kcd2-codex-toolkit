@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kcd2-toolchain.local/schemas/weapon-scope-lint-v1.schema.json",
+  "title": "KCD2 weapon scope lint report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "registry_id", "status", "summary", "family_audit", "overlaps", "diagnostics", "reason_codes"],
+  "properties": {
+    "schema_version": {"const": "kcd2.weapon-scope-lint.v1"},
+    "registry_id": {"$ref": "#/$defs/text"},
+    "status": {"enum": ["PASS", "FAIL"]},
+    "summary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["required_family_count", "examined_family_count", "selector_count", "overlap_count", "diagnostic_count"],
+      "properties": {
+        "required_family_count": {"const": 5},
+        "examined_family_count": {"type": "integer", "minimum": 0, "maximum": 5},
+        "selector_count": {"type": "integer", "minimum": 0, "maximum": 1024},
+        "overlap_count": {"type": "integer", "minimum": 0, "maximum": 523776},
+        "diagnostic_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "family_audit": {"type": "array", "minItems": 5, "maxItems": 5, "items": {"$ref": "#/$defs/family_audit"}},
+    "overlaps": {"type": "array", "maxItems": 523776, "items": {"$ref": "#/$defs/overlap"}},
+    "diagnostics": {"type": "array", "items": {"$ref": "#/$defs/diagnostic"}},
+    "reason_codes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z0-9_]+$", "maxLength": 128}}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "ids": {"type": "array", "maxItems": 4096, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "family_kind": {"enum": ["action", "sync", "movement", "pose", "adb"]},
+    "family_audit": {
+      "type": "object", "additionalProperties": false,
+      "required": ["family_kind", "examined", "evidence_refs", "selector_ids"],
+      "properties": {
+        "family_kind": {"$ref": "#/$defs/family_kind"}, "examined": {"type": "boolean"},
+        "evidence_refs": {"type": "array", "maxItems": 256, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+        "selector_ids": {"type": "array", "maxItems": 1024, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}}
+      }
+    },
+    "endpoint": {
+      "type": "object", "additionalProperties": false,
+      "required": ["family_kind", "selector_id", "selector_kind"],
+      "properties": {"family_kind": {"$ref": "#/$defs/family_kind"}, "selector_id": {"$ref": "#/$defs/text"}, "selector_kind": {"enum": ["exact_item", "broad"]}}
+    },
+    "overlap": {
+      "type": "object", "additionalProperties": false,
+      "required": ["left", "right", "raw_item_ids", "effective_item_ids", "exact_isolation_satisfied"],
+      "properties": {
+        "left": {"$ref": "#/$defs/endpoint"}, "right": {"$ref": "#/$defs/endpoint"},
+        "raw_item_ids": {"$ref": "#/$defs/ids"}, "effective_item_ids": {"$ref": "#/$defs/ids"},
+        "exact_isolation_satisfied": {"type": "boolean"}
+      }
+    },
+    "diagnostic": {
+      "type": "object", "additionalProperties": false,
+      "required": ["code", "scope", "detail", "evidence_layer"],
+      "properties": {
+        "code": {"type": "string", "pattern": "^[A-Z0-9_]+$", "maxLength": 128},
+        "scope": {"$ref": "#/$defs/text"}, "detail": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "evidence_layer": {"const": "static"}
+      }
+    }
+  }
+}

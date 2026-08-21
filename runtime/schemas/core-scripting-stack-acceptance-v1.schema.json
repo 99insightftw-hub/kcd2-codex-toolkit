@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/core-scripting-stack-acceptance-v1.schema.json",
+  "title": "KCD2 COMPAT-002 core scripting stack acceptance receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version","receipt_id","acceptance_id","input_sha256","stack_id","status","reason_codes","gates","namespace_claims","collisions","runtime_captures","runtime_summary","custom_log","overhead","mutation_count","permitted_claims"],
+  "properties": {
+    "schema_version": {"const": "kcd2.core-scripting-stack-acceptance.v1"},
+    "receipt_id": {"type":"string","pattern":"^core-scripting-acceptance:sha256:[0-9a-f]{64}$"},
+    "acceptance_id": {"$ref":"#/$defs/text"},
+    "input_sha256": {"$ref":"#/$defs/sha256"},
+    "stack_id": {"type":"string","pattern":"^compatibility-stack:sha256:[0-9a-f]{64}$"},
+    "status": {"enum":["PASS","FAIL","INCONCLUSIVE"]},
+    "reason_codes": {"$ref":"#/$defs/uniqueTextArray"},
+    "gates": {"type":"array","minItems":6,"maxItems":6,"items":{"$ref":"#/$defs/gate"}},
+    "namespace_claims": {"type":"array","minItems":4,"maxItems":4096,"items":{"$ref":"#/$defs/claim"}},
+    "collisions": {"type":"array","maxItems":4096,"items":{"$ref":"#/$defs/collision"}},
+    "runtime_captures": {"type":"array","minItems":1,"maxItems":256,"items":{"$ref":"#/$defs/runtimeCapture"}},
+    "runtime_summary": {"$ref":"#/$defs/runtimeSummary"},
+    "custom_log": {"$ref":"#/$defs/customLog"},
+    "overhead": {"$ref":"#/$defs/overhead"},
+    "mutation_count": {"type":"integer","minimum":0,"maximum":1000000},
+    "permitted_claims": {"$ref":"#/$defs/uniqueTextArray"}
+  },
+  "$defs": {
+    "text": {"type":"string","minLength":1,"maxLength":1024},
+    "sha256": {"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "projectId": {"type":"string","pattern":"^project:sha256:[0-9a-f]{64}$"},
+    "count": {"type":"integer","minimum":0,"maximum":1000000},
+    "uniqueTextArray": {"type":"array","maxItems":4096,"uniqueItems":true,"items":{"$ref":"#/$defs/text"}},
+    "gate": {
+      "type":"object","additionalProperties":false,
+      "required":["gate_id","status","evidence_layer","evidence_refs"],
+      "properties":{"gate_id":{"$ref":"#/$defs/text"},"status":{"enum":["PASS","FAIL","INCONCLUSIVE"]},"evidence_layer":{"enum":["static","runtime_observed"]},"evidence_refs":{"$ref":"#/$defs/uniqueTextArray"}}
+    },
+    "claim": {
+      "type":"object","additionalProperties":false,
+      "required":["claim_id","kind","namespace","project_id"],
+      "properties":{"claim_id":{"$ref":"#/$defs/text"},"kind":{"enum":["ACTION","GLOBAL","LISTENER","TIMER"]},"namespace":{"$ref":"#/$defs/text"},"project_id":{"$ref":"#/$defs/projectId"}}
+    },
+    "collision": {
+      "type":"object","additionalProperties":false,
+      "required":["kind","namespace","project_ids","claim_ids"],
+      "properties":{"kind":{"enum":["ACTION","GLOBAL","LISTENER","TIMER"]},"namespace":{"$ref":"#/$defs/text"},"project_ids":{"type":"array","minItems":2,"maxItems":256,"uniqueItems":true,"items":{"$ref":"#/$defs/projectId"}},"claim_ids":{"$ref":"#/$defs/uniqueTextArray"}}
+    },
+    "runtimeCapture": {
+      "type":"object","additionalProperties":false,
+      "required":["project_id","session_id","status","reason_codes","instrumentation_channels","initialization_count","active_listener_count","active_timer_count"],
+      "properties":{"project_id":{"$ref":"#/$defs/projectId"},"session_id":{"$ref":"#/$defs/text"},"status":{"enum":["complete","issues_found","capture_inconclusive"]},"reason_codes":{"$ref":"#/$defs/uniqueTextArray"},"instrumentation_channels":{"$ref":"#/$defs/uniqueTextArray"},"initialization_count":{"$ref":"#/$defs/count"},"active_listener_count":{"$ref":"#/$defs/count"},"active_timer_count":{"$ref":"#/$defs/count"}}
+    },
+    "runtimeSummary": {
+      "type":"object","additionalProperties":false,
+      "required":["capture_count","initialization_count","active_listener_count","active_timer_count"],
+      "properties":{"capture_count":{"$ref":"#/$defs/count"},"initialization_count":{"$ref":"#/$defs/count"},"active_listener_count":{"$ref":"#/$defs/count"},"active_timer_count":{"$ref":"#/$defs/count"}}
+    },
+    "levelCounts": {
+      "type":"object","additionalProperties":false,
+      "properties":{"TRACE":{"$ref":"#/$defs/count"},"DEBUG":{"$ref":"#/$defs/count"},"INFO":{"$ref":"#/$defs/count"},"WARN":{"$ref":"#/$defs/count"},"ERROR":{"$ref":"#/$defs/count"},"FATAL":{"$ref":"#/$defs/count"}}
+    },
+    "customLog": {
+      "type":"object","additionalProperties":false,
+      "required":["format","imported_event_count","error_count","error_rate","maximum_error_rate","level_counts","records_sha256"],
+      "properties":{"format":{"const":"jsonl"},"imported_event_count":{"$ref":"#/$defs/count"},"error_count":{"$ref":"#/$defs/count"},"error_rate":{"type":"number","minimum":0,"maximum":1},"maximum_error_rate":{"type":"number","minimum":0,"maximum":1},"level_counts":{"$ref":"#/$defs/levelCounts"},"records_sha256":{"$ref":"#/$defs/sha256"}}
+    },
+    "overhead": {
+      "type":"object","additionalProperties":false,
+      "required":["session_id","capture_validity","severe_overhead","recommendation","invalidation_reasons"],
+      "properties":{"session_id":{"$ref":"#/$defs/text"},"capture_validity":{"enum":["complete","capture_inconclusive"]},"severe_overhead":{"type":"boolean"},"recommendation":{"$ref":"#/$defs/text"},"invalidation_reasons":{"$ref":"#/$defs/uniqueTextArray"}}
+    }
+  }
+}

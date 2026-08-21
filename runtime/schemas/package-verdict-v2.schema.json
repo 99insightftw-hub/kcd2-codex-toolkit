@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/package-verdict-v2.schema.json",
+  "title": "KCD2 package verdict v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_sha256",
+    "structural_integrity",
+    "runtime_compatibility",
+    "packaging_policy",
+    "lineage_compatibility",
+    "runtime_open_confirmation",
+    "profile",
+    "manifest_topology",
+    "external_component_expectation",
+    "overall_static_readiness",
+    "diagnostics"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.package-verdict.v2"
+    },
+    "artifact_sha256": {
+      "type": "string",
+      "pattern": "^[0-9A-Fa-f]{64}$"
+    },
+    "structural_integrity": {
+      "enum": [
+        "VALID",
+        "CORRUPT",
+        "UNREADABLE"
+      ]
+    },
+    "runtime_compatibility": {
+      "enum": [
+        "COMPATIBLE_PROVEN",
+        "INCOMPATIBLE_PROVEN",
+        "UNKNOWN"
+      ]
+    },
+    "packaging_policy": {
+      "enum": [
+        "GENERATED_OUTPUT_VALID",
+        "POLICY_NONCOMPLIANT",
+        "LEGACY_ACCEPTED",
+        "NOT_EVALUATED"
+      ]
+    },
+    "lineage_compatibility": {
+      "enum": [
+        "MATCHED",
+        "MISMATCHED",
+        "NO_PARENT",
+        "UNKNOWN"
+      ]
+    },
+    "runtime_open_confirmation": {
+      "enum": [
+        "CONFIRMED",
+        "NOT_CONFIRMED",
+        "CONTRADICTED"
+      ]
+    },
+    "profile": {
+      "type": "string"
+    },
+    "manifest_topology": {
+      "enum": [
+        "SIBLING_VALID",
+        "SIBLING_MISSING",
+        "INVALID",
+        "NOT_APPLICABLE"
+      ]
+    },
+    "external_component_expectation": {
+      "enum": [
+        "NONE_EXPECTED",
+        "DECLARED_AND_COMPLETE",
+        "DECLARED_AND_INCOMPLETE",
+        "EXPECTATION_UNKNOWN"
+      ]
+    },
+    "overall_static_readiness": {
+      "type": "boolean"
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "count",
+          "examples"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "examples": {
+            "type": "array",
+            "maxItems": 10,
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

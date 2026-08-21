@@ -1,0 +1,211 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/legacy-probe-audit-v1.schema.json",
+  "title": "KCD2 read-only legacy probe audit receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "audit_id",
+    "recorded_at",
+    "legacy_probe_id",
+    "verdict",
+    "target_event_classification",
+    "execution",
+    "migration_plan_identity",
+    "legacy_artifacts",
+    "installed_dll_identity",
+    "events",
+    "controls",
+    "migration",
+    "cleanup",
+    "reasons"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.legacy-probe-audit.v1"},
+    "audit_id": {
+      "type": "string",
+      "pattern": "^legacy-probe-audit:sha256:[a-f0-9]{64}$"
+    },
+    "recorded_at": {"type": "string", "format": "date-time", "maxLength": 64},
+    "legacy_probe_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "verdict": {"const": "capture_inconclusive"},
+    "target_event_classification": {
+      "enum": [
+        "startup_only_inconclusive",
+        "no_target_events_inconclusive",
+        "no_parseable_events_inconclusive",
+        "target_events_observed_legacy_unvalidated"
+      ]
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "gameplay_requested", "live_changes_performed"],
+      "properties": {
+        "mode": {"const": "read_only"},
+        "gameplay_requested": {"const": false},
+        "live_changes_performed": {"const": false}
+      }
+    },
+    "migration_plan_identity": {"$ref": "#/$defs/artifact_identity_without_role"},
+    "legacy_artifacts": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {"$ref": "#/$defs/artifact_identity"}
+    },
+    "installed_dll_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "module_name",
+        "sha256_before",
+        "sha256_after",
+        "size_bytes",
+        "modified"
+      ],
+      "properties": {
+        "module_name": {"type": "string", "minLength": 1, "maxLength": 260},
+        "sha256_before": {"$ref": "#/$defs/sha256"},
+        "sha256_after": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 0, "maximum": 67108864},
+        "modified": {"const": false}
+      }
+    },
+    "events": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "counts",
+        "startup_events_observed",
+        "target_events_observed",
+        "unknown_events_observed",
+        "missing_target_events",
+        "malformed_nonempty_lines",
+        "diagnostics_truncated"
+      ],
+      "properties": {
+        "counts": {
+          "type": "object",
+          "maxProperties": 128,
+          "propertyNames": {"pattern": "^[A-Z][A-Z0-9_]{0,127}$"},
+          "additionalProperties": {"type": "integer", "minimum": 1}
+        },
+        "startup_events_observed": {"$ref": "#/$defs/event_names"},
+        "target_events_observed": {"$ref": "#/$defs/event_names"},
+        "unknown_events_observed": {"$ref": "#/$defs/event_names"},
+        "missing_target_events": {"$ref": "#/$defs/event_names"},
+        "malformed_nonempty_lines": {"type": "integer", "minimum": 0},
+        "diagnostics_truncated": {"type": "boolean"}
+      }
+    },
+    "controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "declared_in_legacy_manifest", "observed", "missing"],
+      "properties": {
+        "required": {"$ref": "#/$defs/nonempty_event_names"},
+        "declared_in_legacy_manifest": {"$ref": "#/$defs/event_names"},
+        "observed": {"$ref": "#/$defs/event_names"},
+        "missing": {"$ref": "#/$defs/event_names"}
+      }
+    },
+    "migration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["disposition", "target", "exact_legacy_artifact_sha256s", "required_actions"],
+      "properties": {
+        "disposition": {"const": "derived_record_only"},
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["probe_contract_schema_version", "probe_bundle_schema_version"],
+          "properties": {
+            "probe_contract_schema_version": {"const": "kcd2.probe-contract.v2"},
+            "probe_bundle_schema_version": {"const": "kcd2.probe-bundle.v2"}
+          }
+        },
+        "exact_legacy_artifact_sha256s": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["manifest", "source", "installed_dll", "log"],
+          "properties": {
+            "manifest": {"$ref": "#/$defs/sha256"},
+            "source": {"$ref": "#/$defs/sha256"},
+            "installed_dll": {"$ref": "#/$defs/sha256"},
+            "log": {"$ref": "#/$defs/sha256"}
+          }
+        },
+        "required_actions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 256}
+        }
+      }
+    },
+    "cleanup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "requirements", "performed", "status"],
+      "properties": {
+        "required": {"const": true},
+        "requirements": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 256}
+        },
+        "performed": {"const": false},
+        "status": {"const": "not_performed_audit_only"}
+      }
+    },
+    "reasons": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,127}$"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "event_names": {
+      "type": "array",
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,127}$"}
+    },
+    "nonempty_event_names": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,127}$"}
+    },
+    "artifact_identity_without_role": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "size_bytes"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1, "maxLength": 512},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 0, "maximum": 67108864}
+      }
+    },
+    "artifact_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "path", "sha256", "size_bytes"],
+      "properties": {
+        "role": {"enum": ["manifest", "source", "installed_dll", "log"]},
+        "path": {"type": "string", "minLength": 1, "maxLength": 512},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 0, "maximum": 67108864}
+      }
+    }
+  }
+}

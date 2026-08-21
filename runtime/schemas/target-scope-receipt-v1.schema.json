@@ -1,0 +1,251 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/target-scope-receipt-v1.schema.json",
+  "title": "KCD2 exact-target scope receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "receipt_id",
+    "operation",
+    "requested_target",
+    "declared_limits",
+    "allowed_roots",
+    "actual_access",
+    "status",
+    "diagnostics"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.target-scope-receipt.v1"
+    },
+    "receipt_id": {
+      "type": "string",
+      "pattern": "^scope:[A-Za-z0-9._:-]+$"
+    },
+    "operation": {
+      "enum": [
+        "inspect_mod_exact",
+        "refresh_mod_exact",
+        "resolve_mod_provider_exact"
+      ]
+    },
+    "requested_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mod_id",
+        "provider_kind"
+      ],
+      "properties": {
+        "mod_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provider_kind": {
+          "enum": [
+            "local",
+            "workshop",
+            "explicit_path",
+            "unresolved"
+          ]
+        },
+        "provider_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "manifest_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9A-Fa-f]{64}$"
+        },
+        "pak_sha256s": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9A-Fa-f]{64}$"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "declared_limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_files",
+        "max_archive_entries",
+        "max_physical_bytes",
+        "max_response_bytes"
+      ],
+      "properties": {
+        "max_files": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_archive_entries": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_physical_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_response_bytes": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "allowed_roots": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "actual_access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "roots_touched",
+        "files_opened",
+        "archive_entries_examined",
+        "physical_bytes_read",
+        "provider_records_touched",
+        "other_provider_records_touched",
+        "out_of_scope_paths",
+        "response_bytes",
+        "scan_complete",
+        "limits_reached"
+      ],
+      "properties": {
+        "roots_touched": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "files_opened": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "archive_entries_examined": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "physical_bytes_read": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "provider_records_touched": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "other_provider_records_touched": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "out_of_scope_paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "response_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "detail_artifact": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9A-Fa-f]{64}$"
+            }
+          },
+          "required": [
+            "path",
+            "sha256"
+          ]
+        },
+        "scan_complete": {
+          "type": "boolean"
+        },
+        "limits_reached": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "files",
+              "archive_entries",
+              "physical_bytes",
+              "response_bytes"
+            ]
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "status": {
+      "enum": [
+        "TARGET_SCOPE_OK",
+        "TARGET_SCOPE_BREACH",
+        "TARGET_SCOPE_LIMIT_REACHED",
+        "INCONCLUSIVE"
+      ]
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "TARGET_SCOPE_OK"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "actual_access": {
+            "properties": {
+              "other_provider_records_touched": {
+                "const": 0
+              },
+              "out_of_scope_paths": {
+                "maxItems": 0
+              },
+              "scan_complete": {
+                "const": true
+              },
+              "limits_reached": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

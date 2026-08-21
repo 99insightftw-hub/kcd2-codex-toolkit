@@ -1,0 +1,253 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/ai-quest-graph-audit-v1.schema.json",
+  "title": "KCD2 AI, quest, STORM, and world-behavior graph audit v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "graph_id", "domains", "source", "nodes", "edges",
+    "runtime_markers", "coverage", "verdict", "reason_codes"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.ai-quest-graph-audit.v1"},
+    "graph_id": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "domains": {
+      "type": "array", "minItems": 1, "maxItems": 9, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/domain"}
+    },
+    "source": {"$ref": "#/$defs/source"},
+    "nodes": {
+      "type": "array", "maxItems": 100000,
+      "items": {"$ref": "#/$defs/node"}
+    },
+    "edges": {
+      "type": "array", "maxItems": 250000,
+      "items": {"$ref": "#/$defs/edge"}
+    },
+    "runtime_markers": {
+      "type": "array", "maxItems": 250000,
+      "items": {"$ref": "#/$defs/runtime_marker"}
+    },
+    "coverage": {
+      "type": "array", "minItems": 1, "maxItems": 9,
+      "items": {"$ref": "#/$defs/coverage"}
+    },
+    "verdict": {"enum": ["valid", "invalid", "capture_inconclusive"]},
+    "reason_codes": {
+      "type": "array", "maxItems": 128, "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    }
+  },
+  "$defs": {
+    "domain": {
+      "enum": [
+        "quest_graph", "xgen", "smart_object", "scheduler", "storm", "spawn",
+        "role", "faction", "persistence"
+      ]
+    },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sha256", "byte_size", "exact_locator", "captured_at"],
+      "properties": {
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "byte_size": {"type": "integer", "minimum": 0, "maximum": 1099511627776},
+        "exact_locator": {"type": "string", "minLength": 1, "maxLength": 8192},
+        "captured_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "metadata": {
+      "type": "object", "maxProperties": 64,
+      "propertyNames": {"type": "string", "minLength": 1, "maxLength": 128},
+      "additionalProperties": {}
+    },
+    "static_evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["evidence_id", "evidence_layer", "evidence_kind", "exact_locator"],
+      "properties": {
+        "evidence_id": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "evidence_layer": {"const": "static"},
+        "evidence_kind": {
+          "enum": ["source_declared", "active_source_exact", "derived_contract"]
+        },
+        "exact_locator": {"type": "string", "minLength": 1, "maxLength": 8192}
+      }
+    },
+    "ownership": {
+      "type": "object", "additionalProperties": false,
+      "required": ["state", "owner_node_id", "evidence_ids"],
+      "properties": {
+        "state": {"enum": ["declared", "unresolved", "not_applicable"]},
+        "owner_node_id": {"type": ["string", "null"], "minLength": 1, "maxLength": 1024},
+        "evidence_ids": {
+          "type": "array", "maxItems": 64, "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 1024}
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"state": {"enum": ["unresolved", "not_applicable"]}}},
+          "then": {"properties": {"owner_node_id": {"const": null}}}
+        },
+        {
+          "if": {"properties": {"state": {"const": "declared"}}},
+          "then": {"properties": {"owner_node_id": {"type": "string"}}}
+        }
+      ]
+    },
+    "normalized_node_kind": {
+      "enum": [
+        "quest_graph", "quest_module", "quest_node", "quest_port", "quest_condition",
+        "quest_action", "quest_variable", "dialog_selector", "xgen_graph", "xgen_node",
+        "smart_object", "smart_object_helper", "scheduler", "schedule_entry", "storm_rule",
+        "spawn_definition", "entity", "soul", "soul_pool", "role", "faction",
+        "ai_signal", "reputation_effect", "persistence_owner", "persistent_state"
+      ]
+    },
+    "node": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "node_id", "domain", "raw_kind", "normalized_kind", "support_state",
+        "reason_code", "identity_key", "exact_locator", "ownership", "evidence", "metadata"
+      ],
+      "properties": {
+        "node_id": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "domain": {"$ref": "#/$defs/domain"},
+        "raw_kind": {"type": "string", "minLength": 1, "maxLength": 256},
+        "normalized_kind": {
+          "anyOf": [{"$ref": "#/$defs/normalized_node_kind"}, {"type": "null"}]
+        },
+        "support_state": {"enum": ["supported", "unsupported", "unresolved"]},
+        "reason_code": {"type": ["string", "null"], "minLength": 1, "maxLength": 256},
+        "identity_key": {"type": "string", "minLength": 1, "maxLength": 8192},
+        "exact_locator": {"type": "string", "minLength": 1, "maxLength": 8192},
+        "ownership": {"$ref": "#/$defs/ownership"},
+        "evidence": {
+          "type": "array", "maxItems": 64,
+          "items": {"$ref": "#/$defs/static_evidence"}
+        },
+        "metadata": {"$ref": "#/$defs/metadata"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"support_state": {"const": "supported"}}},
+          "then": {"properties": {"reason_code": {"const": null}}}
+        },
+        {
+          "if": {"properties": {"support_state": {"enum": ["unsupported", "unresolved"]}}},
+          "then": {
+            "properties": {
+              "normalized_kind": {"const": null},
+              "reason_code": {"type": "string"}
+            }
+          }
+        }
+      ]
+    },
+    "normalized_edge_kind": {
+      "enum": [
+        "contains", "connects_to", "owns", "references", "conditions", "executes",
+        "reads", "writes", "selects", "uses_helper", "schedules", "spawns",
+        "resolves_entity", "resolves_soul", "assigns_role", "member_of_faction",
+        "signals", "affects_reputation", "persists", "loads"
+      ]
+    },
+    "edge": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "edge_id", "from_node_id", "to_node_id", "raw_kind", "normalized_kind",
+        "support_state", "reason_code", "exact_locator", "evidence", "metadata"
+      ],
+      "properties": {
+        "edge_id": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "from_node_id": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "to_node_id": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "raw_kind": {"type": "string", "minLength": 1, "maxLength": 256},
+        "normalized_kind": {
+          "anyOf": [{"$ref": "#/$defs/normalized_edge_kind"}, {"type": "null"}]
+        },
+        "support_state": {"enum": ["supported", "unsupported", "unresolved"]},
+        "reason_code": {"type": ["string", "null"], "minLength": 1, "maxLength": 256},
+        "exact_locator": {"type": "string", "minLength": 1, "maxLength": 8192},
+        "evidence": {
+          "type": "array", "maxItems": 64,
+          "items": {"$ref": "#/$defs/static_evidence"}
+        },
+        "metadata": {"$ref": "#/$defs/metadata"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"support_state": {"const": "supported"}}},
+          "then": {"properties": {"reason_code": {"const": null}}}
+        },
+        {
+          "if": {"properties": {"support_state": {"enum": ["unsupported", "unresolved"]}}},
+          "then": {
+            "properties": {
+              "normalized_kind": {"const": null},
+              "reason_code": {"type": "string"}
+            }
+          }
+        }
+      ]
+    },
+    "runtime_marker": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "marker_id", "evidence_layer", "marker_kind", "session_id", "sequence",
+        "node_ids", "edge_ids", "source_health", "observed_at", "exact_locator", "payload"
+      ],
+      "properties": {
+        "marker_id": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "evidence_layer": {"const": "runtime"},
+        "marker_kind": {
+          "enum": [
+            "graph_entry", "graph_exit", "condition_result", "branch_selected",
+            "entity_resolved", "role_resolved", "action_requested", "action_result",
+            "spawned", "despawned", "state_mutated", "save_started", "save_completed",
+            "load_started", "load_completed", "persistence_checked"
+          ]
+        },
+        "session_id": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "sequence": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807},
+        "node_ids": {
+          "type": "array", "maxItems": 64, "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 1024}
+        },
+        "edge_ids": {
+          "type": "array", "maxItems": 64, "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 1024}
+        },
+        "source_health": {
+          "enum": ["healthy", "partial", "dropped_events", "truncated", "unavailable"]
+        },
+        "observed_at": {"type": "string", "format": "date-time"},
+        "exact_locator": {"type": "string", "minLength": 1, "maxLength": 8192},
+        "payload": {"$ref": "#/$defs/metadata"}
+      }
+    },
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "domain", "status", "enumerated_count", "retained_unsupported_count",
+        "absence_claim_allowed", "reason_codes"
+      ],
+      "properties": {
+        "domain": {"$ref": "#/$defs/domain"},
+        "status": {"enum": ["complete", "partial", "unsupported", "capture_inconclusive"]},
+        "enumerated_count": {"type": "integer", "minimum": 0, "maximum": 100000},
+        "retained_unsupported_count": {"type": "integer", "minimum": 0, "maximum": 100000},
+        "absence_claim_allowed": {"type": "boolean"},
+        "reason_codes": {
+          "type": "array", "maxItems": 128, "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 256}
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"enum": ["partial", "unsupported", "capture_inconclusive"]}}},
+          "then": {"properties": {"absence_claim_allowed": {"const": false}}}
+        }
+      ]
+    }
+  }
+}

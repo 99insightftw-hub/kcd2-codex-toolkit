@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/environment-fingerprint-v1.schema.json",
+  "title": "KCD2 environment fingerprint v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "fingerprint_id", "collected_at", "collection_state", "game", "providers", "mod_order", "kcse_components", "active_snapshot", "index_instances", "missing_layers", "limits"],
+  "properties": {
+    "schema_version": {"const": "kcd2.environment-fingerprint.v1"},
+    "fingerprint_id": {"type": "string", "pattern": "^env:sha256:[A-Fa-f0-9]{64}$"},
+    "collected_at": {"type": "string", "format": "date-time", "maxLength": 64},
+    "collection_state": {"enum": ["complete", "partial", "unavailable"]},
+    "game": {
+      "type": "object", "additionalProperties": false,
+      "required": ["state", "version", "executable", "whgame"],
+      "properties": {
+        "state": {"enum": ["present", "missing", "unavailable"]},
+        "version": {"type": ["string", "null"], "maxLength": 128},
+        "executable": {"type": ["object", "null"], "additionalProperties": false, "required": ["name", "sha256", "bytes", "pe_timestamp", "image_size"], "properties": {"name": {"type": "string", "minLength": 1, "maxLength": 260}, "sha256": {"$ref": "#/$defs/sha256"}, "bytes": {"type": "integer", "minimum": 0, "maximum": 1099511627776}, "pe_timestamp": {"type": "string", "pattern": "^0x[A-Fa-f0-9]{1,16}$"}, "image_size": {"type": "integer", "minimum": 1, "maximum": 1099511627776}}},
+        "whgame": {"type": ["object", "null"], "additionalProperties": false, "required": ["name", "sha256", "bytes", "pe_timestamp", "image_size"], "properties": {"name": {"type": "string", "minLength": 1, "maxLength": 260}, "sha256": {"$ref": "#/$defs/sha256"}, "bytes": {"type": "integer", "minimum": 0, "maximum": 1099511627776}, "pe_timestamp": {"type": "string", "pattern": "^0x[A-Fa-f0-9]{1,16}$"}, "image_size": {"type": "integer", "minimum": 1, "maximum": 1099511627776}}}
+      }
+    },
+    "providers": {"type": "array", "maxItems": 4096, "items": {"type": "object", "additionalProperties": false, "required": ["source", "state", "provider_id", "inventory_sha256", "artifacts"], "properties": {"source": {"enum": ["local", "workshop"]}, "state": {"enum": ["present", "missing", "unavailable", "partial"]}, "provider_id": {"type": ["string", "null"], "maxLength": 256}, "inventory_sha256": {"type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{64}$"}, "artifacts": {"type": "array", "maxItems": 8192, "items": {"$ref": "#/$defs/file_identity"}}}}},
+    "mod_order": {"$ref": "#/$defs/layer_identity"},
+    "kcse_components": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/component_identity"}},
+    "active_snapshot": {"type": "object", "additionalProperties": false, "required": ["state", "snapshot_id", "sha256", "captured_at"], "properties": {"state": {"enum": ["fresh_exact", "partial", "stale", "missing", "unavailable"]}, "snapshot_id": {"type": ["string", "null"], "maxLength": 256}, "sha256": {"type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{64}$"}, "captured_at": {"type": ["string", "null"], "format": "date-time", "maxLength": 64}}},
+    "index_instances": {"type": "array", "maxItems": 32, "items": {"type": "object", "additionalProperties": false, "required": ["role", "state", "identity_sha256", "version"], "properties": {"role": {"enum": ["fast_source", "semantic_xgen", "adjacent_ui_gfx", "resolution_provenance"]}, "state": {"enum": ["available", "missing", "unavailable", "stale"]}, "identity_sha256": {"type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{64}$"}, "version": {"type": ["string", "null"], "maxLength": 128}}}},
+    "missing_layers": {"type": "array", "maxItems": 64, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 128}},
+    "limits": {"$ref": "#/$defs/limits"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+    "file_identity": {"type": "object", "additionalProperties": false, "required": ["logical_path", "sha256", "bytes"], "properties": {"logical_path": {"type": "string", "minLength": 1, "maxLength": 4096}, "sha256": {"$ref": "#/$defs/sha256"}, "bytes": {"type": "integer", "minimum": 0, "maximum": 1099511627776}}},
+    "component_identity": {"type": "object", "additionalProperties": false, "required": ["role", "state", "logical_path", "sha256", "bytes"], "properties": {"role": {"type": "string", "minLength": 1, "maxLength": 128}, "state": {"enum": ["present", "missing", "unavailable"]}, "logical_path": {"type": ["string", "null"], "maxLength": 4096}, "sha256": {"type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{64}$"}, "bytes": {"type": ["integer", "null"], "minimum": 0, "maximum": 1099511627776}}},
+    "layer_identity": {"type": "object", "additionalProperties": false, "required": ["state", "logical_path", "sha256", "bytes"], "properties": {"state": {"enum": ["present", "missing", "unavailable"]}, "logical_path": {"type": ["string", "null"], "maxLength": 4096}, "sha256": {"type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{64}$"}, "bytes": {"type": ["integer", "null"], "minimum": 0, "maximum": 1099511627776}}},
+    "limits": {"type": "object", "additionalProperties": false, "required": ["max_providers", "max_artifacts_per_provider", "max_components", "max_path_chars", "max_artifact_bytes"], "properties": {"max_providers": {"type": "integer", "minimum": 1, "default": 1024, "maximum": 4096}, "max_artifacts_per_provider": {"type": "integer", "minimum": 1, "default": 2048, "maximum": 8192}, "max_components": {"type": "integer", "minimum": 1, "default": 64, "maximum": 256}, "max_path_chars": {"type": "integer", "minimum": 1, "default": 2048, "maximum": 4096}, "max_artifact_bytes": {"type": "integer", "minimum": 1, "default": 134217728, "maximum": 1099511627776}}}
+  }
+}

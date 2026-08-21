@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/multi-channel-correlation-v1.schema.json",
+  "title": "KCD2 multi-channel correlation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "manifest_id", "session_id", "correlation_field", "attempts", "unknown_intervals", "summary"],
+  "properties": {
+    "schema_version": {"const": "kcd2.multi-channel-correlation.v1"},
+    "manifest_id": {"$ref": "#/$defs/name"},
+    "session_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "correlation_field": {"$ref": "#/$defs/name"},
+    "attempts": {"type": "array", "maxItems": 10000, "items": {"$ref": "#/$defs/attempt"}},
+    "unknown_intervals": {"type": "array", "maxItems": 80000, "items": {"$ref": "#/$defs/unknown"}},
+    "summary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "attempt_count", "adapted_event_count", "skipped_correlated_events", "valid_for_claims", "absence_conclusion"],
+      "properties": {
+        "status": {"enum": ["complete", "capture_inconclusive"]},
+        "attempt_count": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "adapted_event_count": {"type": "integer", "minimum": 0, "maximum": 100000},
+        "skipped_correlated_events": {"type": "integer", "minimum": 0, "maximum": 100000},
+        "valid_for_claims": {"const": ["manifest_mapped_event_presence"]},
+        "absence_conclusion": {"const": "not_supported"}
+      }
+    }
+  },
+  "$defs": {
+    "name": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"},
+    "time": {"type": ["integer", "null"]},
+    "stage": {"enum": ["action_request", "action_admit", "action_reject", "action_decision", "phase", "orientation", "prompt", "fragment_route", "animation_start", "animation_complete", "causal_order"]},
+    "event": {
+      "type": "object", "additionalProperties": false,
+      "required": ["event_id", "channel_id", "source", "source_event_type", "stage", "session_time_lower_ns", "session_time_upper_ns"],
+      "properties": {
+        "event_id": {"$ref": "#/$defs/name"}, "channel_id": {"$ref": "#/$defs/name"},
+        "source": {"$ref": "#/$defs/name"}, "source_event_type": {"$ref": "#/$defs/name"},
+        "stage": {"$ref": "#/$defs/stage"}, "session_time_lower_ns": {"$ref": "#/$defs/time"},
+        "session_time_upper_ns": {"$ref": "#/$defs/time"}
+      }
+    },
+    "attempt": {
+      "type": "object", "additionalProperties": false,
+      "required": ["attempt_id", "decision", "causal_stage_verdict", "events", "unknown_interval_ids"],
+      "properties": {
+        "attempt_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "decision": {"enum": ["action_admit", "action_reject", "unknown"]},
+        "causal_stage_verdict": {"enum": ["complete", "capture_inconclusive", "invalid_order"]},
+        "events": {"type": "array", "maxItems": 100000, "items": {"$ref": "#/$defs/event"}},
+        "unknown_interval_ids": {"type": "array", "maxItems": 9, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 512}}
+      }
+    },
+    "unknown": {
+      "type": "object", "additionalProperties": false,
+      "required": ["interval_id", "attempt_id", "stage", "lower_ns", "upper_ns", "reason", "sources"],
+      "properties": {
+        "interval_id": {"type": "string", "minLength": 1, "maxLength": 512},
+        "attempt_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "stage": {"$ref": "#/$defs/stage"}, "lower_ns": {"$ref": "#/$defs/time"}, "upper_ns": {"$ref": "#/$defs/time"},
+        "reason": {"enum": ["channel_unavailable", "not_observed_in_covered_channel", "clock_uncertainty"]},
+        "sources": {"type": "array", "maxItems": 16, "uniqueItems": true, "items": {"$ref": "#/$defs/name"}}
+      }
+    }
+  }
+}

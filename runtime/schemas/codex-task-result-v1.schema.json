@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/codex-task-result-v1.schema.json",
+  "title": "KCD2 Codex task result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "result", "summary", "files_changed", "tests", "artifacts", "safety_live_side_effects", "remaining_blockers", "backlog_state_updates", "git_commit"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "kcd2.codex-task-result.v1"},
+    "task_id": {"type": "string", "pattern": "^[A-Z]+-[0-9]{3}$", "maxLength": 32},
+    "result": {"type": "string", "enum": ["done", "blocked_external", "failed"]},
+    "summary": {"type": "string", "minLength": 1, "maxLength": 8000},
+    "files_changed": {"type": "array", "maxItems": 500, "items": {"type": "string", "minLength": 1, "maxLength": 1024}},
+    "tests": {
+      "type": "array", "maxItems": 200,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["command", "status", "details"],
+        "properties": {
+          "command": {"type": "string", "minLength": 1, "maxLength": 4096},
+          "status": {"type": "string", "enum": ["passed", "failed", "not_run", "blocked"]},
+          "details": {"type": "string", "maxLength": 8000}
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array", "maxItems": 500,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["path", "sha256", "purpose"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1, "maxLength": 1024},
+          "sha256": {"type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{64}$"},
+          "purpose": {"type": "string", "minLength": 1, "maxLength": 2000}
+        }
+      }
+    },
+    "safety_live_side_effects": {"type": "string", "minLength": 1, "maxLength": 4000},
+    "remaining_blockers": {"type": "array", "maxItems": 100, "items": {"type": "string", "minLength": 1, "maxLength": 4000}},
+    "backlog_state_updates": {"type": "array", "maxItems": 100, "items": {"type": "string", "minLength": 1, "maxLength": 2000}},
+    "git_commit": {"type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{7,64}$"}
+  }
+}

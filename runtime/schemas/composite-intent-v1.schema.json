@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/composite-intent-v1.schema.json",
+  "title": "KCD2 composite relationship declaration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "relationship_id",
+    "relationship_type",
+    "members",
+    "shared_resources",
+    "verdict"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.composite-intent.v1"
+    },
+    "relationship_id": {
+      "type": "string"
+    },
+    "relationship_type": {
+      "enum": [
+        "COMPOSITE_WITH",
+        "SUPERSEDES",
+        "REPLACES",
+        "COMPATIBILITY_FOR",
+        "MIRRORS",
+        "UNKNOWN_REQUIRES_DECLARATION"
+      ]
+    },
+    "members": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "shared_resources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "canonical_path",
+          "intent"
+        ],
+        "properties": {
+          "canonical_path": {
+            "type": "string"
+          },
+          "intent": {
+            "enum": [
+              "INTENDED_WINNER",
+              "INTENDED_MERGE",
+              "PROTECTED_UPSTREAM",
+              "IDENTICAL_MIRROR",
+              "UNRESOLVED"
+            ]
+          },
+          "winner_project_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "required_dependency_versions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "runtime_assertions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "verdict": {
+      "enum": [
+        "DECLARED_VALID",
+        "DECLARED_INVALID",
+        "UNRESOLVED"
+      ]
+    }
+  }
+}

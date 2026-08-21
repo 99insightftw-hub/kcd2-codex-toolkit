@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/container-validation-v1.schema.json",
+  "title": "KCD2 container validation applicability v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "path",
+    "container_type",
+    "container_valid",
+    "pe_validation",
+    "diagnostics"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.container-validation.v1"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "container_type": {
+      "enum": [
+        "zip_pak",
+        "pe_image",
+        "seven_zip",
+        "directory",
+        "unknown"
+      ]
+    },
+    "container_valid": {
+      "type": "boolean"
+    },
+    "pe_validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "applicable",
+        "status"
+      ],
+      "properties": {
+        "applicable": {
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "valid",
+            "invalid",
+            "not_applicable",
+            "not_checked"
+          ]
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "container_type": {
+            "const": "zip_pak"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "pe_validation": {
+            "properties": {
+              "applicable": {
+                "const": false
+              },
+              "status": {
+                "const": "not_applicable"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "container_type": {
+            "const": "pe_image"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "pe_validation": {
+            "properties": {
+              "applicable": {
+                "const": true
+              },
+              "status": {
+                "enum": [
+                  "valid",
+                  "invalid"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

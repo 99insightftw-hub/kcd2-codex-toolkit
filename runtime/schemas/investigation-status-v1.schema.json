@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/investigation-status-v1.schema.json",
+  "title": "KCD2 compact investigation status v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "investigation_id", "state", "identity_id",
+    "head_transition_sha256", "open_hypothesis_ids", "last_valid_evidence_ids",
+    "blockers", "cleanup_state", "available_next_operations", "approval_granted", "details"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.investigation-status.v1"},
+    "investigation_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "state": {"type": "string", "minLength": 1, "maxLength": 64},
+    "identity_id": {"type": "string", "pattern": "^identity:sha256:[0-9a-f]{64}$"},
+    "head_transition_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "open_hypothesis_ids": {"type": "array", "maxItems": 256, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 256}},
+    "last_valid_evidence_ids": {"type": "array", "maxItems": 512, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 256}},
+    "blockers": {"type": "array", "maxItems": 256, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 512}},
+    "cleanup_state": {"enum": ["NOT_REQUIRED", "REQUIRED", "VERIFIED", "UNKNOWN"]},
+    "available_next_operations": {"type": "array", "maxItems": 64, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 128}},
+    "approval_granted": {"const": false},
+    "details": {"$ref": "#/$defs/details"}
+  },
+  "$defs": {
+    "details": {
+      "type": "object", "additionalProperties": false,
+      "required": ["artifact_sha256", "items", "pagination"],
+      "properties": {
+        "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "items": {"type": "array", "maxItems": 128, "items": {"type": "object"}},
+        "pagination": {
+          "type": "object", "additionalProperties": false,
+          "required": ["page_size", "offset", "returned_items", "total_items", "continuation_token"],
+          "properties": {
+            "page_size": {"type": "integer", "minimum": 1, "maximum": 128},
+            "offset": {"type": "integer", "minimum": 0, "maximum": 4096},
+            "returned_items": {"type": "integer", "minimum": 0, "maximum": 128},
+            "total_items": {"type": "integer", "minimum": 0, "maximum": 4096},
+            "continuation_token": {"type": ["string", "null"], "maxLength": 160}
+          }
+        }
+      }
+    }
+  }
+}

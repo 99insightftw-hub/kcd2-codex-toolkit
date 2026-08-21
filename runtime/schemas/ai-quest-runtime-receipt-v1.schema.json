@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/ai-quest-runtime-receipt-v1.schema.json",
+  "title": "KCD2 AI and quest runtime receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version","status","session","deployment_identity","capture_health","capture_limits","capture_usage","absence_claim_allowed","event_counts","runtime_markers","session_assertions","persistence","cleanup","permitted_claims","reason_codes"],
+  "properties": {
+    "schema_version": {"const": "kcd2.ai-quest-runtime-receipt.v1"},
+    "status": {"enum": ["complete", "capture_inconclusive"]},
+    "session": {"type":"object","additionalProperties":false,"required":["session_id","experiment_id","graph_id"],"properties":{"session_id":{"$ref":"#/$defs/text"},"experiment_id":{"$ref":"#/$defs/text"},"graph_id":{"$ref":"#/$defs/text"}}},
+    "deployment_identity": {"$ref":"#/$defs/deployment"},
+    "capture_health": {"type":"object","additionalProperties":false,"required":["source_health","capture_complete","filter_valid","correlation_valid"],"properties":{"source_health":{"$ref":"#/$defs/health"},"capture_complete":{"type":"boolean"},"filter_valid":{"type":"boolean"},"correlation_valid":{"type":"boolean"}}},
+    "capture_limits": {"$ref":"#/$defs/limits"},
+    "capture_usage": {"type":"object","additionalProperties":false,"required":["event_count","payload_bytes","session_duration_ns"],"properties":{"event_count":{"type":"integer","minimum":1,"maximum":100000},"payload_bytes":{"type":"integer","minimum":0,"maximum":16777216},"session_duration_ns":{"type":"integer","minimum":0,"maximum":86400000000000}}},
+    "absence_claim_allowed": {"type":"boolean"},
+    "event_counts": {"type":"object","maxProperties":17,"additionalProperties":{"type":"integer","minimum":1,"maximum":100000}},
+    "runtime_markers": {"type":"array","maxItems":100000,"items":{"$ref":"#/$defs/marker"}},
+    "session_assertions": {"type":"array","minItems":16,"maxItems":16,"items":{"$ref":"#/$defs/assertion"}},
+    "persistence": {"type":"object","additionalProperties":false,"required":["status","checks","reason_codes"],"properties":{"status":{"enum":["verified","unresolved"]},"checks":{"type":"array","maxItems":4096,"items":{"type":"object","additionalProperties":false,"required":["state_identity_key","status","reason_codes"],"properties":{"state_identity_key":{"$ref":"#/$defs/text"},"status":{"enum":["verified","unresolved"]},"reason_codes":{"$ref":"#/$defs/reasons"}}}},"reason_codes":{"$ref":"#/$defs/reasons"}}},
+    "cleanup": {"type":"object","additionalProperties":false,"required":["status","active_hooks","active_listeners","buffered_events","debugger_state"],"properties":{"status":{"enum":["complete","incomplete"]},"active_hooks":{"type":["integer","null"],"minimum":0},"active_listeners":{"type":["integer","null"],"minimum":0},"buffered_events":{"type":["integer","null"],"minimum":0},"debugger_state":{"type":["string","null"],"enum":["unavailable","running","paused","detached",null]}}},
+    "permitted_claims": {"type":"array","maxItems":16,"uniqueItems":true,"items":{"$ref":"#/$defs/text"}},
+    "reason_codes": {"$ref":"#/$defs/reasons"}
+  },
+  "$defs": {
+    "text": {"type":"string","minLength":1,"maxLength":8192},
+    "digest": {"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "health": {"enum":["healthy","partial","dropped_events","truncated","unavailable"]},
+    "reasons": {"type":"array","maxItems":128,"uniqueItems":true,"items":{"type":"string","minLength":1,"maxLength":256}},
+    "limits": {"type":"object","additionalProperties":false,"required":["maximum_events","maximum_payload_bytes","maximum_session_duration_ns"],"properties":{"maximum_events":{"type":"integer","minimum":1,"maximum":100000},"maximum_payload_bytes":{"type":"integer","minimum":1,"maximum":16777216},"maximum_session_duration_ns":{"type":"integer","minimum":1,"maximum":86400000000000}}},
+    "deployment": {"type":"object","additionalProperties":false,"required":["binding_state","deployment_id","candidate_id","active_snapshot_sha256","deployment_identity_sha256","close_deployment_identity_sha256"],"properties":{"binding_state":{"const":"EXACT"},"deployment_id":{"$ref":"#/$defs/text"},"candidate_id":{"$ref":"#/$defs/text"},"active_snapshot_sha256":{"$ref":"#/$defs/digest"},"deployment_identity_sha256":{"$ref":"#/$defs/digest"},"close_deployment_identity_sha256":{"$ref":"#/$defs/digest"}}},
+    "marker_kind": {"enum":["graph_entry","graph_exit","condition_result","branch_selected","entity_resolved","role_resolved","action_requested","action_result","spawned","despawned","state_mutated","save_started","save_completed","load_started","load_completed","persistence_checked"]},
+    "marker": {"type":"object","additionalProperties":false,"required":["marker_id","evidence_layer","marker_kind","session_id","sequence","node_ids","edge_ids","source_health","observed_at","exact_locator","payload"],"properties":{"marker_id":{"$ref":"#/$defs/text"},"evidence_layer":{"const":"runtime"},"marker_kind":{"$ref":"#/$defs/marker_kind"},"session_id":{"$ref":"#/$defs/text"},"sequence":{"type":"integer","minimum":0,"maximum":9223372036854775807},"node_ids":{"type":"array","maxItems":64,"uniqueItems":true,"items":{"$ref":"#/$defs/text"}},"edge_ids":{"type":"array","maxItems":64,"uniqueItems":true,"items":{"$ref":"#/$defs/text"}},"source_health":{"$ref":"#/$defs/health"},"observed_at":{"type":"string","format":"date-time"},"exact_locator":{"$ref":"#/$defs/text"},"payload":{"type":"object"}}},
+    "assertion": {"type":"object","additionalProperties":false,"required":["stage","status","first_sequence","marker_ids","reason_code"],"properties":{"stage":{"$ref":"#/$defs/marker_kind"},"status":{"enum":["observed","unresolved"]},"first_sequence":{"type":["integer","null"],"minimum":0},"marker_ids":{"type":"array","maxItems":100000,"uniqueItems":true,"items":{"$ref":"#/$defs/text"}},"reason_code":{"type":["string","null"],"maxLength":256}}}
+  },
+  "allOf": [
+    {"if":{"properties":{"status":{"const":"capture_inconclusive"}}},"then":{"properties":{"absence_claim_allowed":{"const":false}}}}
+  ]
+}

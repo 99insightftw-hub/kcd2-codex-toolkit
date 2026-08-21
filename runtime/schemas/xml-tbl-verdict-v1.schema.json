@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/xml-tbl-verdict-v1.schema.json",
+  "title": "KCD2 XML/TBL path-specific requirement verdict v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "game_build", "internal_path", "xml_sha256", "verdict", "package_promotion", "evidence_refs", "waiver"],
+  "properties": {
+    "schema_version": {"const": "kcd2.xml-tbl-verdict.v1"},
+    "game_build": {"type": "string", "minLength": 1, "maxLength": 128},
+    "whgame_sha256": {"type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{64}$"},
+    "internal_path": {"type": "string", "minLength": 1, "maxLength": 2048},
+    "xml_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+    "verdict": {"enum": ["TBL_REQUIRED_AND_MATCHED", "TBL_NOT_REQUIRED_WITH_EVIDENCE", "TBL_REQUIREMENT_UNKNOWN"]},
+    "package_promotion": {"enum": ["BLOCKED", "PACKAGE_VALIDATED", "PACKAGE_VALIDATED_WITH_SCOPED_WAIVER"]},
+    "tbl_artifacts": {
+      "type": "array", "maxItems": 64,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["path", "sha256", "relationship"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1, "maxLength": 2048},
+          "sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+          "relationship": {"enum": ["compiled_counterpart", "generator_input", "unrelated_candidate"]}
+        }
+      }
+    },
+    "evidence_refs": {"type": "array", "minItems": 1, "maxItems": 256, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 512}},
+    "waiver": {
+      "type": ["object", "null"], "additionalProperties": false,
+      "required": [
+        "schema_version", "waiver_id", "game_build", "whgame_sha256",
+        "internal_path", "xml_sha256", "approved_by_user", "reason", "evidence_refs"
+      ],
+      "properties": {
+        "schema_version": {"const": "kcd2.xml-tbl-waiver.v1"},
+        "waiver_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "game_build": {"type": "string", "minLength": 1, "maxLength": 128},
+        "whgame_sha256": {
+          "type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{64}$"
+        },
+        "internal_path": {"type": "string", "minLength": 1, "maxLength": 2048},
+        "xml_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+        "approved_by_user": {"const": true},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 4000},
+        "evidence_refs": {
+          "type": "array", "minItems": 1, "maxItems": 256, "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 512}
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"verdict": {"const": "TBL_REQUIREMENT_UNKNOWN"}},
+        "required": ["verdict"]
+      },
+      "then": {
+        "oneOf": [
+          {
+            "properties": {
+              "package_promotion": {"const": "BLOCKED"},
+              "waiver": {"const": null}
+            }
+          },
+          {
+            "properties": {
+              "package_promotion": {"const": "PACKAGE_VALIDATED_WITH_SCOPED_WAIVER"},
+              "waiver": {
+                "type": "object",
+                "properties": {"approved_by_user": {"const": true}},
+                "required": ["approved_by_user"]
+              }
+            }
+          }
+        ]
+      },
+      "else": {
+        "properties": {
+          "package_promotion": {"const": "PACKAGE_VALIDATED"},
+          "waiver": {"const": null}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"verdict": {"const": "TBL_REQUIRED_AND_MATCHED"}},
+        "required": ["verdict"]
+      },
+      "then": {
+        "required": ["tbl_artifacts"],
+        "properties": {"tbl_artifacts": {"minItems": 1}}
+      }
+    }
+  ]
+}

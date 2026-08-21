@@ -1,0 +1,211 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/conflict-classification-v1.schema.json",
+  "title": "KCD2 conflict classification v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "coverage_id",
+    "observed_conflict_count",
+    "ignored_provider_metadata_count",
+    "items",
+    "conclusion",
+    "absence_claim_valid",
+    "reason_codes"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.conflict-classification.v1"
+    },
+    "coverage_id": {
+      "type": "string"
+    },
+    "observed_conflict_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "ignored_provider_metadata_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "classification",
+          "providers"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "classification": {
+            "enum": [
+              "PROVIDER_METADATA_NO_CONFLICT",
+              "DUPLICATE_MOD_PROVIDER",
+              "INVALID_MULTIPLE_MANIFESTS_IN_PROVIDER",
+              "GAME_RELATIVE_OVERRIDE_CONFLICT",
+              "MERGE_CONTRIBUTION",
+              "UNKNOWN"
+            ]
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "conclusion": {
+      "enum": [
+        "CONFLICTS_OBSERVED",
+        "CONFIRMED_NONE",
+        "ZERO_OBSERVED_PARTIAL_COVERAGE",
+        "ZERO_OBSERVED_STALE_COVERAGE",
+        "INCONCLUSIVE",
+        "NOT_EVALUATED"
+      ]
+    },
+    "absence_claim_valid": {
+      "type": "boolean"
+    },
+    "reason_codes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "query_id": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "semantic_items": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path", "domain", "providers", "outcome", "effective_provider_ids",
+          "effective_outcome_supported", "intentional_win",
+          "protected_resource_violation", "conflict_counts"
+        ],
+        "properties": {
+          "path": {"type": "string", "minLength": 1, "maxLength": 1024},
+          "domain": {
+            "enum": [
+              "inventory", "items_stats", "processing", "smart_objects",
+              "lua_lifecycle", "localization", "ui_icons", "quests", "combat",
+              "animation", "shops", "configuration", "native_components", "other"
+            ]
+          },
+          "providers": {"type": "array", "maxItems": 1024, "items": {"type": "string"}},
+          "outcome": {
+            "enum": [
+              "winner", "ordered_merge", "parallel", "separate_namespace",
+              "component_specific", "metadata_only", "no_provider", "inconclusive"
+            ]
+          },
+          "effective_provider_ids": {
+            "type": "array", "maxItems": 1024, "items": {"type": "string"}
+          },
+          "effective_outcome_supported": {"type": "boolean"},
+          "intentional_win": {"type": "boolean"},
+          "protected_resource_violation": {"type": "boolean"},
+          "conflict_counts": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "file": {"type": "integer", "minimum": 0},
+              "record": {"type": "integer", "minimum": 0},
+              "attribute": {"type": "integer", "minimum": 0},
+              "child": {"type": "integer", "minimum": 0},
+              "reference": {"type": "integer", "minimum": 0}
+            }
+          }
+        }
+      }
+    },
+    "domain_groups": {
+      "type": "array",
+      "maxItems": 14,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["domain", "path_count", "conflict_count", "levels"],
+        "properties": {
+          "domain": {"type": "string"},
+          "path_count": {"type": "integer", "minimum": 0},
+          "conflict_count": {"type": "integer", "minimum": 0},
+          "levels": {
+            "type": "array", "maxItems": 5, "uniqueItems": true,
+            "items": {"enum": ["file", "record", "attribute", "child", "reference"]}
+          }
+        }
+      }
+    },
+    "intentional_wins": {
+      "type": "array", "maxItems": 4096,
+      "items": {"$ref": "#/$defs/pathProviderDomain"}
+    },
+    "intended_winner_mismatches": {
+      "type": "array", "maxItems": 4096,
+      "items": {"$ref": "#/$defs/declarationFailure"}
+    },
+    "protected_resource_violations": {
+      "type": "array", "maxItems": 4096,
+      "items": {"$ref": "#/$defs/declarationFailure"}
+    },
+    "full_shadow_analyses": {
+      "type": "array",
+      "maxItems": 1024,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path", "shadow_ratio", "full_file_shadow", "baseline_total_records",
+          "changed_records", "duplicated_records", "dependency_source_builds",
+          "dependency_content_sha256", "stale_shadow_risk"
+        ],
+        "properties": {
+          "path": {"type": "string"},
+          "shadow_ratio": {"type": "number", "minimum": 0, "maximum": 1},
+          "full_file_shadow": {"type": "boolean"},
+          "baseline_total_records": {"type": "integer", "minimum": 0},
+          "changed_records": {"type": "integer", "minimum": 0},
+          "duplicated_records": {"type": "integer", "minimum": 0},
+          "dependency_source_builds": {"type": "array", "maxItems": 1024, "items": {"type": "string"}},
+          "dependency_content_sha256": {"type": "array", "maxItems": 1024, "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+          "stale_shadow_risk": {"enum": ["review_required", "none_observed"]}
+        }
+      }
+    },
+    "result": {"enum": ["PASS", "FAIL", "INCONCLUSIVE"]}
+  },
+  "$defs": {
+    "pathProviderDomain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "provider_id", "domain"],
+      "properties": {
+        "path": {"type": "string"},
+        "provider_id": {"type": "string"},
+        "domain": {"type": "string"}
+      }
+    },
+    "declarationFailure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "effective_provider_ids"],
+      "properties": {
+        "path": {"type": "string"},
+        "expected_provider_id": {"type": "string"},
+        "required_provider_id": {"type": "string"},
+        "effective_provider_ids": {"type": "array", "maxItems": 1024, "items": {"type": "string"}}
+      }
+    }
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/configuration-resolution-v1.schema.json",
+  "title": "KCD2 effective configuration resolution",
+  "description": "CONFIG-002 output. This is additive to configuration-audit-v1: existing audit records need no migration; consumers opt into this occurrence-level resolution when variant, build, and runtime-unknown semantics are required.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "snapshot_id", "game_build", "variant_selection", "excluded_variant_sources", "build_compatibility", "effective_settings", "conflicts", "runtime_assignments_complete", "verdict"],
+  "properties": {
+    "schema_version": {"const": "kcd2.configuration-resolution.v1"},
+    "snapshot_id": {"$ref": "#/$defs/text"},
+    "game_build": {"$ref": "#/$defs/text"},
+    "variant_selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selection_id", "selected_member_ids"],
+      "properties": {
+        "selection_id": {"type": ["string", "null"], "pattern": "^variant-selection:sha256:[0-9a-f]{64}$"},
+        "selected_member_ids": {"type": "array", "maxItems": 4096, "uniqueItems": true, "items": {"type": "string", "pattern": "^variant-member:sha256:[0-9a-f]{64}$"}}
+      }
+    },
+    "excluded_variant_sources": {"type": "array", "maxItems": 512, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "build_compatibility": {"type": "array", "maxItems": 512, "items": {"$ref": "#/$defs/buildCompatibility"}},
+    "effective_settings": {"type": "array", "maxItems": 16384, "items": {"$ref": "#/$defs/setting"}},
+    "conflicts": {"type": "array", "maxItems": 16384, "items": {"$ref": "#/$defs/conflict"}},
+    "runtime_assignments_complete": {"type": "boolean"},
+    "verdict": {"enum": ["VALID", "INVALID", "INCONCLUSIVE"]}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "application": {"enum": ["STARTUP", "RUNTIME", "ORDERED_MERGE", "PARALLEL_REGISTRATION", "UNKNOWN"]},
+    "contributor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider_id", "path", "load_order_index", "occurrence", "value"],
+      "properties": {
+        "provider_id": {"$ref": "#/$defs/text"},
+        "path": {"$ref": "#/$defs/text"},
+        "load_order_index": {"type": ["integer", "null"], "minimum": 0, "maximum": 2147483647},
+        "occurrence": {"type": "integer", "minimum": 1, "maximum": 16384},
+        "value": {}
+      }
+    },
+    "buildCompatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider_id", "supported_game_builds", "status"],
+      "properties": {
+        "provider_id": {"$ref": "#/$defs/text"},
+        "supported_game_builds": {"type": "array", "maxItems": 256, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+        "status": {"enum": ["COMPATIBLE", "INCOMPATIBLE", "UNKNOWN"]}
+      }
+    },
+    "setting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "application", "contributors", "static_effective_value", "static_status", "runtime_effective_value", "runtime_status", "diagnostics"],
+      "properties": {
+        "key": {"$ref": "#/$defs/text"},
+        "application": {"$ref": "#/$defs/application"},
+        "contributors": {"type": "array", "minItems": 1, "maxItems": 16384, "items": {"$ref": "#/$defs/contributor"}},
+        "static_effective_value": {},
+        "static_status": {"enum": ["EFFECTIVE", "PARALLEL", "UNKNOWN"]},
+        "runtime_effective_value": {},
+        "runtime_status": {"enum": ["OBSERVED", "UNCHANGED", "UNKNOWN", "NOT_APPLICABLE"]},
+        "diagnostics": {"type": "array", "maxItems": 4, "uniqueItems": true, "items": {"enum": ["REPEATED_ASSIGNMENT", "ORDERED_OVERRIDE", "ORDER_UNPROVEN", "RUNTIME_MUTATION_UNKNOWN"]}}
+      }
+    },
+    "conflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "reason", "contributors"],
+      "properties": {
+        "key": {"$ref": "#/$defs/text"},
+        "reason": {"const": "ORDER_UNPROVEN"},
+        "contributors": {"type": "array", "minItems": 2, "maxItems": 16384, "items": {"$ref": "#/$defs/contributor"}}
+      }
+    }
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/environment-discovery-v1.schema.json",
+  "title": "KCD2 environment discovery v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "profile_id", "collected_at", "classification", "components",
+    "repositories", "plugins", "catalog", "drift_events", "implies_tool_eligibility",
+    "limits"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.environment-discovery.v1"},
+    "profile_id": {"$ref": "#/$defs/text"},
+    "collected_at": {"type": "string", "format": "date-time", "maxLength": 64},
+    "classification": {"const": "non-live_read-only_discovery"},
+    "components": {
+      "type": "array", "minItems": 9, "maxItems": 64,
+      "items": {"$ref": "#/$defs/component"}
+    },
+    "repositories": {
+      "type": "array", "maxItems": 64,
+      "items": {"$ref": "#/$defs/repository"}
+    },
+    "plugins": {
+      "type": "array", "maxItems": 64,
+      "items": {"$ref": "#/$defs/plugin"}
+    },
+    "catalog": {"$ref": "#/$defs/catalog"},
+    "drift_events": {
+      "type": "array", "maxItems": 512,
+      "items": {"type": "object"}
+    },
+    "implies_tool_eligibility": {"const": false},
+    "limits": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "max_identity_bytes", "max_version_bytes", "max_manifest_bytes",
+        "max_catalog_bytes"
+      ],
+      "properties": {
+        "max_identity_bytes": {"type": "integer", "minimum": 1, "maximum": 2147483648},
+        "max_version_bytes": {"type": "integer", "minimum": 1, "maximum": 65536},
+        "max_manifest_bytes": {"type": "integer", "minimum": 1, "maximum": 1048576},
+        "max_catalog_bytes": {"type": "integer", "minimum": 1, "maximum": 16777216}
+      }
+    }
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 2048},
+    "nullable_text": {"type": ["string", "null"], "maxLength": 2048},
+    "state": {"enum": ["observed", "missing", "unavailable"]},
+    "sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "component": {
+      "type": "object", "additionalProperties": false,
+      "required": ["component_id", "path", "state", "sha256", "version_state", "version"],
+      "properties": {
+        "component_id": {"$ref": "#/$defs/text"}, "path": {"$ref": "#/$defs/text"},
+        "state": {"$ref": "#/$defs/state"}, "sha256": {"$ref": "#/$defs/sha256"},
+        "version_state": {"$ref": "#/$defs/state"},
+        "version": {"$ref": "#/$defs/nullable_text"}
+      }
+    },
+    "repository": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "path", "state", "commit", "tree_sha256"],
+      "properties": {
+        "name": {"$ref": "#/$defs/text"}, "path": {"$ref": "#/$defs/text"},
+        "state": {"$ref": "#/$defs/state"}, "commit": {"$ref": "#/$defs/nullable_text"},
+        "tree_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "plugin": {
+      "type": "object", "additionalProperties": false,
+      "required": ["plugin_id", "manifest_path", "state", "version", "manifest_sha256"],
+      "properties": {
+        "plugin_id": {"$ref": "#/$defs/text"},
+        "manifest_path": {"$ref": "#/$defs/text"}, "state": {"$ref": "#/$defs/state"},
+        "version": {"$ref": "#/$defs/nullable_text"},
+        "manifest_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "catalog_item": {
+      "type": "object", "additionalProperties": false,
+      "required": ["catalog_id", "path", "state", "sha256"],
+      "properties": {
+        "catalog_id": {"$ref": "#/$defs/text"}, "path": {"$ref": "#/$defs/text"},
+        "state": {"$ref": "#/$defs/state"}, "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "catalog": {
+      "type": "object", "additionalProperties": false,
+      "required": ["state", "fingerprint", "items"],
+      "properties": {
+        "state": {"enum": ["observed", "unavailable"]},
+        "fingerprint": {"$ref": "#/$defs/sha256"},
+        "items": {
+          "type": "array", "minItems": 1, "maxItems": 64,
+          "items": {"$ref": "#/$defs/catalog_item"}
+        }
+      }
+    }
+  }
+}

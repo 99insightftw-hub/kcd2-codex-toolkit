@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/path-contribution-set-v1.schema.json",
+  "title": "KCD2 path contribution set v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "query_id",
+    "canonical_path",
+    "discovery_mode",
+    "coverage_id",
+    "contributions",
+    "resolution"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.path-contribution-set.v1"
+    },
+    "query_id": {
+      "type": "string"
+    },
+    "canonical_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "discovery_mode": {
+      "enum": [
+        "automatic",
+        "manual",
+        "hybrid"
+      ]
+    },
+    "coverage_id": {
+      "type": "string"
+    },
+    "contributions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "provider_id",
+          "provider_kind",
+          "mod_id",
+          "source_path",
+          "member_or_loose_path",
+          "content_sha256",
+          "contribution_kind",
+          "resolution_semantics",
+          "load_order_index",
+          "selection_state"
+        ],
+        "properties": {
+          "provider_id": {
+            "type": "string"
+          },
+          "provider_kind": {
+            "enum": [
+              "vanilla",
+              "local",
+              "workshop",
+              "explicit",
+              "generated",
+              "unknown"
+            ]
+          },
+          "mod_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_path": {
+            "type": "string"
+          },
+          "member_or_loose_path": {
+            "type": "string"
+          },
+          "content_sha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9A-Fa-f]{64}$"
+          },
+          "contribution_kind": {
+            "enum": [
+              "provider_metadata",
+              "exact_override",
+              "table_patch",
+              "lua_mod_init",
+              "config_override",
+              "ui_asset_override",
+              "localization",
+              "quest_graph",
+              "storm_merge",
+              "native_component",
+              "unknown"
+            ]
+          },
+          "resolution_semantics": {
+            "enum": [
+              "no_runtime_override",
+              "override_last_wins",
+              "ordered_merge",
+              "parallel_load",
+              "separate_namespace",
+              "component_specific",
+              "unknown"
+            ]
+          },
+          "load_order_index": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "selection_state": {
+            "enum": [
+              "winner",
+              "contributes",
+              "shadowed",
+              "parallel",
+              "metadata_only",
+              "unresolved"
+            ]
+          }
+        }
+      }
+    },
+    "resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conclusion",
+        "winner_provider_id",
+        "reason_codes"
+      ],
+      "properties": {
+        "conclusion": {
+          "enum": [
+            "winner",
+            "multiple_contributors",
+            "parallel_contributors",
+            "no_provider_observed",
+            "inconclusive"
+          ]
+        },
+        "winner_provider_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reason_codes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

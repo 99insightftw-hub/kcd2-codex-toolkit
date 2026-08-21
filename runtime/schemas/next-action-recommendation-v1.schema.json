@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/next-action-recommendation-v1.schema.json",
+  "title": "KCD2 next-action recommendation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "investigation_id", "identity_id", "head_transition_sha256",
+    "ranked_eligible_actions", "selected_action_id", "approval_granted",
+    "approval_required_for_selected_action", "created_at", "details", "operation_receipt_id"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.next-action-recommendation.v1"},
+    "investigation_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "identity_id": {"type": "string", "pattern": "^identity:sha256:[0-9a-f]{64}$"},
+    "head_transition_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "ranked_eligible_actions": {"type": "array", "maxItems": 16, "items": {"$ref": "#/$defs/action"}},
+    "selected_action_id": {"type": ["string", "null"], "maxLength": 256},
+    "approval_granted": {"const": false},
+    "approval_required_for_selected_action": {"type": "boolean"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "details": {"$ref": "#/$defs/details"},
+    "operation_receipt_id": {"type": "string", "pattern": "^recommend-next-action:sha256:[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "gain": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["mode", "value"], "properties": {"mode": {"const": "QUALITATIVE"}, "value": {"enum": ["NONE", "LOW", "MEDIUM", "HIGH"]}}},
+        {"type": "object", "additionalProperties": false, "required": ["mode", "value"], "properties": {"mode": {"const": "QUANTITATIVE"}, "value": {"type": "number", "minimum": 0, "maximum": 1}}}
+      ]
+    },
+    "cost": {"type": "object", "additionalProperties": false, "required": ["setup", "execution", "cleanup"], "properties": {"setup": {"enum": ["NONE", "LOW", "MEDIUM", "HIGH"]}, "execution": {"enum": ["NONE", "LOW", "MEDIUM", "HIGH"]}, "cleanup": {"enum": ["NONE", "LOW", "MEDIUM", "HIGH"]}}},
+    "texts": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 512}},
+    "action": {
+      "type": "object", "additionalProperties": false,
+      "required": ["action_id", "action_kind", "decision", "rank", "information_gain", "cost", "user_burden", "safety_risk", "required_controls", "evidence_needs", "missing_evidence", "missing_controls", "blockers", "reasons", "explanation", "requires_separate_approval", "approval_granted"],
+      "properties": {
+        "action_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "action_kind": {"enum": ["STATIC_REVIEW", "BOUNDED_X64DBG_PROOF", "PASSIVE_PROBE", "ORDINARY_GAMEPLAY_OBSERVATION", "BUILD_DEPLOY_WORK", "CLEANUP", "STOP_NO_FURTHER_TEST"]},
+        "decision": {"enum": ["ELIGIBLE", "BLOCKED", "TEST_UNINFORMATIVE"]},
+        "rank": {"type": ["integer", "null"], "minimum": 1, "maximum": 256},
+        "information_gain": {"$ref": "#/$defs/gain"},
+        "cost": {"$ref": "#/$defs/cost"},
+        "user_burden": {"enum": ["NONE", "LOW", "MEDIUM", "HIGH"]},
+        "safety_risk": {"enum": ["NONE", "LOW", "MEDIUM", "HIGH"]},
+        "required_controls": {"$ref": "#/$defs/texts"},
+        "evidence_needs": {"$ref": "#/$defs/texts"},
+        "missing_evidence": {"$ref": "#/$defs/texts"},
+        "missing_controls": {"$ref": "#/$defs/texts"},
+        "blockers": {"$ref": "#/$defs/texts"},
+        "reasons": {"type": "array", "maxItems": 130, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 512}},
+        "explanation": {"type": "string", "minLength": 1, "maxLength": 2048},
+        "requires_separate_approval": {"type": "boolean"},
+        "approval_granted": {"const": false}
+      }
+    },
+    "details": {
+      "type": "object", "additionalProperties": false,
+      "required": ["artifact_sha256", "items", "pagination"],
+      "properties": {
+        "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "items": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/action"}},
+        "pagination": {
+          "type": "object", "additionalProperties": false,
+          "required": ["page_size", "offset", "returned_items", "total_items", "continuation_token"],
+          "properties": {
+            "page_size": {"type": "integer", "minimum": 1, "maximum": 128},
+            "offset": {"type": "integer", "minimum": 0, "maximum": 4096},
+            "returned_items": {"type": "integer", "minimum": 0, "maximum": 128},
+            "total_items": {"type": "integer", "minimum": 0, "maximum": 4096},
+            "continuation_token": {"type": ["string", "null"], "maxLength": 160}
+          }
+        }
+      }
+    }
+  }
+}

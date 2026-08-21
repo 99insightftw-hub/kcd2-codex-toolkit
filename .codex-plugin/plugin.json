@@ -1,0 +1,19 @@
+{
+  "name": "kcd2-codex-toolkit",
+  "version": "0.1.0",
+  "description": "Evidence-first KCD2 mod analysis, deterministic packaging, guarded deployment, and native research tools for Codex.",
+  "author": {
+    "name": "99insightftw-hub"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "KCD2 Codex Toolkit",
+    "shortDescription": "Analyze, build, validate, and safely deploy KCD2 mods.",
+    "longDescription": "Evidence-first Kingdom Come: Deliverance II tooling for package inspection, deterministic builds, guarded installation and rollback, index-backed research, and bounded native probes.",
+    "developerName": "99insightftw-hub",
+    "category": "Developer Tools",
+    "capabilities": ["KCD2 mod analysis", "deterministic packaging", "guarded deployment", "native evidence research"],
+    "defaultPrompt": "Analyze this KCD2 mod task evidence-first and use the safest applicable workflow."
+  },
+  "mcpServers": "./.mcp.json"
+}

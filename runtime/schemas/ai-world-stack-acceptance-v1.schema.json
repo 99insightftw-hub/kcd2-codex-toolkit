@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/ai-world-stack-acceptance-v1.schema.json",
+  "title": "KCD2 AI and world compatibility acceptance receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "acceptance_id",
+    "stack_id",
+    "active_snapshot_id",
+    "runtime_session_id",
+    "status",
+    "absence_claim_allowed",
+    "evidence_layers",
+    "gates",
+    "resolved_paths",
+    "persistence",
+    "summary",
+    "component_receipts",
+    "reason_codes"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.ai-world-stack-acceptance.v1"},
+    "acceptance_id": {"$ref": "#/$defs/text"},
+    "stack_id": {
+      "type": "string",
+      "pattern": "^compatibility-stack:sha256:[0-9a-f]{64}$"
+    },
+    "active_snapshot_id": {
+      "type": "string",
+      "pattern": "^active-snapshot:sha256:[0-9a-f]{64}$"
+    },
+    "runtime_session_id": {"$ref": "#/$defs/text"},
+    "status": {"$ref": "#/$defs/status"},
+    "absence_claim_allowed": {"type": "boolean"},
+    "evidence_layers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["static", "runtime", "causal"],
+      "properties": {
+        "static": {"const": true},
+        "runtime": {"const": true},
+        "causal": {"const": false}
+      }
+    },
+    "gates": {
+      "type": "array",
+      "minItems": 13,
+      "maxItems": 32,
+      "items": {"$ref": "#/$defs/gate"}
+    },
+    "resolved_paths": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 256,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path_id", "capability", "graph", "resolved"],
+        "properties": {
+          "path_id": {"$ref": "#/$defs/text"},
+          "capability": {"$ref": "#/$defs/capability"},
+          "graph": {"enum": ["quest", "world"]},
+          "resolved": {"type": "boolean"}
+        }
+      }
+    },
+    "persistence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "static_status",
+        "runtime_status",
+        "identity_correlated",
+        "state_identity_keys"
+      ],
+      "properties": {
+        "static_status": {"enum": ["resolved", "unresolved"]},
+        "runtime_status": {"enum": ["verified", "unresolved"]},
+        "identity_correlated": {"type": "boolean"},
+        "state_identity_keys": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 512,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/text"}
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "shared_path_count",
+        "resolved_path_count",
+        "provider_binding_count",
+        "quest_node_count",
+        "world_node_count"
+      ],
+      "properties": {
+        "shared_path_count": {"type": "integer", "minimum": 7, "maximum": 256},
+        "resolved_path_count": {"type": "integer", "minimum": 0, "maximum": 256},
+        "provider_binding_count": {"type": "integer", "minimum": 1, "maximum": 256},
+        "quest_node_count": {"type": "integer", "minimum": 1, "maximum": 100000},
+        "world_node_count": {"type": "integer", "minimum": 1, "maximum": 100000}
+      }
+    },
+    "component_receipts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quest_topology_sha256",
+        "world_behavior_sha256",
+        "runtime_receipt_sha256"
+      ],
+      "properties": {
+        "quest_topology_sha256": {"$ref": "#/$defs/digest"},
+        "world_behavior_sha256": {"$ref": "#/$defs/digest"},
+        "runtime_receipt_sha256": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "reason_codes": {
+      "type": "array",
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/text"}
+    }
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 8192},
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "status": {"enum": ["PASS", "FAIL", "INCONCLUSIVE"]},
+    "capability": {
+      "enum": [
+        "quest_path",
+        "dialog",
+        "roles_factions",
+        "smart_object",
+        "scheduler",
+        "spawn",
+        "reputation"
+      ]
+    },
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gate_id", "status", "evidence_layer", "evidence_refs"],
+      "properties": {
+        "gate_id": {"$ref": "#/$defs/text"},
+        "status": {"$ref": "#/$defs/status"},
+        "evidence_layer": {"enum": ["static", "runtime"]},
+        "evidence_refs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 512,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/text"}
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "INCONCLUSIVE"}}},
+      "then": {"properties": {"absence_claim_allowed": {"const": false}}}
+    }
+  ]
+}

@@ -1,0 +1,427 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/x64dbg-session-receipt-v1.schema.json",
+  "title": "KCD2 x64dbg session receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "receipt_id",
+    "session_id",
+    "operation",
+    "debugger_identity",
+    "debugger_state_before",
+    "debugger_state_after",
+    "process_running_checks",
+    "temporary_breakpoints",
+    "cross_tool_identity_id",
+    "result"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.x64dbg-session-receipt.v1"
+    },
+    "receipt_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "session_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "operation": {
+      "enum": [
+        "prepare_gameplay_handoff",
+        "capture_checkpoint",
+        "close_debug_session"
+      ]
+    },
+    "debugger_identity": {
+      "$ref": "#/$defs/debugger_identity"
+    },
+    "debugger_state_before": {
+      "enum": [
+        "NOT_RUNNING",
+        "DETACHED",
+        "CONNECTED_PAUSED",
+        "CONNECTED_RUNNING"
+      ]
+    },
+    "debugger_state_after": {
+      "enum": [
+        "NOT_RUNNING",
+        "DETACHED",
+        "CONNECTED_PAUSED",
+        "CONNECTED_RUNNING"
+      ]
+    },
+    "process_running_checks": {
+      "type": "array",
+      "maxItems": 2,
+      "items": {
+        "type": "boolean"
+      }
+    },
+    "debugger_state_checks": {
+      "type": "array",
+      "maxItems": 2,
+      "items": {
+        "$ref": "#/$defs/debugger_state_check"
+      }
+    },
+    "wait_interval_ms": {
+      "type": "integer",
+      "minimum": 750,
+      "maximum": 60000
+    },
+    "temporary_breakpoints": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "unexpected_breakpoints": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "cross_tool_identity_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "result": {
+      "enum": [
+        "PASS",
+        "FAIL",
+        "BLOCKED"
+      ]
+    },
+    "checkpoint_artifact_sha256": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9A-Fa-f]{64}$"
+    },
+    "checkpoint_artifact": {
+      "$ref": "#/$defs/checkpoint_artifact"
+    },
+    "breakpoints_cleared": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    },
+    "cleanup": {
+      "$ref": "#/$defs/cleanup"
+    },
+    "approval_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 256
+    },
+    "blockers": {
+      "type": "array",
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "const": "prepare_gameplay_handoff"
+          }
+        },
+        "required": [
+          "operation"
+        ]
+      },
+      "then": {
+        "required": [
+          "debugger_state_checks",
+          "wait_interval_ms",
+          "unexpected_breakpoints",
+          "approval_id",
+          "blockers"
+        ],
+        "properties": {
+          "approval_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "const": "prepare_gameplay_handoff"
+          },
+          "result": {
+            "const": "PASS"
+          }
+        },
+        "required": [
+          "operation",
+          "result"
+        ]
+      },
+      "then": {
+        "properties": {
+          "debugger_state_after": {
+            "const": "CONNECTED_RUNNING"
+          },
+          "process_running_checks": {
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "const": true
+            }
+          },
+          "debugger_state_checks": {
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "$ref": "#/$defs/gameplay_safe_state_check"
+            }
+          },
+          "unexpected_breakpoints": {
+            "maxItems": 0
+          },
+          "blockers": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"operation": {"const": "capture_checkpoint"}},
+        "required": ["operation"]
+      },
+      "then": {
+        "required": ["checkpoint_artifact", "checkpoint_artifact_sha256", "approval_id", "blockers"],
+        "properties": {
+          "result": {"const": "PASS"},
+          "checkpoint_artifact_sha256": {"type": "string"},
+          "approval_id": {"type": "string", "minLength": 1},
+          "blockers": {"maxItems": 0}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"operation": {"const": "close_debug_session"}},
+        "required": ["operation"]
+      },
+      "then": {
+        "required": [
+          "debugger_state_checks", "wait_interval_ms", "breakpoints_cleared",
+          "unexpected_breakpoints", "approval_id", "cleanup", "blockers"
+        ],
+        "properties": {"approval_id": {"type": "string", "minLength": 1}}
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "operation": {"const": "close_debug_session"},
+          "result": {"const": "PASS"}
+        },
+        "required": ["operation", "result"]
+      },
+      "then": {
+        "properties": {
+          "debugger_state_after": {"const": "DETACHED"},
+          "process_running_checks": {
+            "minItems": 2, "maxItems": 2, "items": {"const": true}
+          },
+          "debugger_state_checks": {
+            "minItems": 2, "maxItems": 2,
+            "items": {
+              "allOf": [
+                {"$ref": "#/$defs/debugger_state_check"},
+                {"properties": {
+                  "connected": {"const": false}, "debugging": {"const": false},
+                  "paused": {"const": false}, "active_breakpoints": {"maxItems": 0}
+                }}
+              ]
+            }
+          },
+          "unexpected_breakpoints": {"maxItems": 0},
+          "blockers": {"maxItems": 0}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "debugger_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_id",
+        "provider_version",
+        "executable_path",
+        "executable_sha256"
+      ],
+      "properties": {
+        "provider_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "provider_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "executable_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "executable_sha256": {
+          "type": "string",
+          "pattern": "^[0-9A-Fa-f]{64}$"
+        }
+      }
+    },
+    "debugger_state_check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "connected",
+        "debugging",
+        "running",
+        "paused",
+        "active_breakpoints"
+      ],
+      "properties": {
+        "connected": {
+          "type": "boolean"
+        },
+        "debugging": {
+          "type": "boolean"
+        },
+        "running": {
+          "type": "boolean"
+        },
+        "paused": {
+          "type": "boolean"
+        },
+        "active_breakpoints": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        }
+      }
+    },
+    "gameplay_safe_state_check": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/debugger_state_check"
+        },
+        {
+          "properties": {
+            "connected": {
+              "const": true
+            },
+            "debugging": {
+              "const": true
+            },
+            "running": {
+              "const": true
+            },
+            "paused": {
+              "const": false
+            }
+          }
+        }
+      ]
+    },
+    "checkpoint_artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version", "artifact_id", "session_id", "cross_tool_identity_id",
+        "module_name", "module_sha256", "checkpoint_rva", "bytes", "bytes_hex",
+        "registers", "maximum_bytes"
+      ],
+      "properties": {
+        "schema_version": {"const": "kcd2.x64dbg-checkpoint.v1"},
+        "artifact_id": {"type": "string", "pattern": "^x64dbg-checkpoint:[0-9a-f]{64}$"},
+        "session_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "cross_tool_identity_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "module_name": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,128}$"},
+        "module_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "checkpoint_rva": {"type": "string", "pattern": "^0x[0-9A-F]{1,16}$"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "bytes_hex": {"type": "string", "pattern": "^(?:[0-9a-f]{2}){1,4096}$"},
+        "registers": {
+          "type": "object", "maxProperties": 64,
+          "propertyNames": {"pattern": "^[A-Za-z][A-Za-z0-9_]{0,15}$"},
+          "additionalProperties": {"type": "string", "pattern": "^0x[0-9A-F]{1,16}$"}
+        },
+        "maximum_bytes": {"type": "integer", "minimum": 1, "maximum": 4096}
+      }
+    },
+    "cleanup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version", "session_id", "temporary_breakpoints_requested",
+        "breakpoints_cleared", "detach_attempted", "verification_checks", "result", "blockers"
+      ],
+      "properties": {
+        "schema_version": {"const": "kcd2.x64dbg-session-cleanup.v1"},
+        "session_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "temporary_breakpoints_requested": {
+          "type": "array", "maxItems": 64, "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 256}
+        },
+        "breakpoints_cleared": {
+          "type": "array", "maxItems": 64, "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 256}
+        },
+        "detach_attempted": {"type": "boolean"},
+        "verification_checks": {
+          "type": "array", "maxItems": 2,
+          "items": {"$ref": "#/$defs/debugger_state_check"}
+        },
+        "result": {"enum": ["PASS", "BLOCKED"]},
+        "blockers": {
+          "type": "array", "maxItems": 32, "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 128}
+        }
+      }
+    }
+  }
+}

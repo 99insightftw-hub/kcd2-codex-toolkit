@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/runtime-domain-event-v1.schema.json",
+  "title": "KCD2 runtime domain event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "session_id",
+    "experiment_id",
+    "domain",
+    "event_type",
+    "monotonic_ns",
+    "source_health",
+    "identity",
+    "payload"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.runtime-domain-event.v1"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "experiment_id": {
+      "type": "string"
+    },
+    "domain": {
+      "enum": [
+        "LUA_ENTITY",
+        "UI_GFX",
+        "AI_QUEST",
+        "ITEM_RPG",
+        "VISUAL_LIGHTING",
+        "LOCALIZATION_DIALOG",
+        "AUDIO_HAPTIC",
+        "COMBAT_NATIVE"
+      ]
+    },
+    "event_type": {
+      "type": "string"
+    },
+    "monotonic_ns": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "source_health": {
+      "enum": [
+        "HEALTHY",
+        "PARTIAL",
+        "DROPPED_EVENTS",
+        "TRUNCATED",
+        "UNAVAILABLE"
+      ]
+    },
+    "identity": {
+      "type": "object"
+    },
+    "payload": {
+      "type": "object"
+    },
+    "cleanup_state": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

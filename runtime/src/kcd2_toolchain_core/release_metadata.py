@@ -1,0 +1,284 @@
+"""Canonical release versions, generated surfaces, and package provenance."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import platform
+import re
+import subprocess
+from pathlib import Path, PurePosixPath
+from typing import Any, Mapping
+
+
+METADATA_PATH = Path("release/release-metadata.json")
+SCHEMA_ID = "https://schemas.local/kcd2/release-metadata-v1.schema.json"
+SCHEMA_VERSION = "kcd2.release-metadata.v1"
+MAX_METADATA_BYTES = 256 * 1024
+_COMPONENT_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
+_VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+\S*$")
+_HEX_RE = re.compile(r"^[0-9a-f]+$")
+
+
+class ReleaseMetadataError(RuntimeError):
+    """Raised when release surfaces or provenance cannot be trusted."""
+
+
+def _read_object(path: Path) -> dict[str, Any]:
+    try:
+        if path.stat().st_size > MAX_METADATA_BYTES:
+            raise ReleaseMetadataError(f"release input exceeds {MAX_METADATA_BYTES} bytes: {path}")
+        value = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ReleaseMetadataError(f"invalid release JSON: {path}") from exc
+    if not isinstance(value, dict):
+        raise ReleaseMetadataError(f"release JSON root must be an object: {path}")
+    return value
+
+
+def _relative_path(root: Path, value: object) -> Path:
+    if not isinstance(value, str) or not value or "\\" in value:
+        raise ReleaseMetadataError("release paths must be non-empty POSIX paths")
+    relative = PurePosixPath(value)
+    if relative.is_absolute() or any(part in ("", ".", "..") for part in relative.parts):
+        raise ReleaseMetadataError(f"unsafe release path: {value!r}")
+    candidate = root.joinpath(*relative.parts).resolve()
+    prefix = str(root.resolve()).rstrip("\\/") + str(Path("/"))
+    if not str(candidate).startswith(prefix):
+        raise ReleaseMetadataError(f"release path escapes repository: {value!r}")
+    return candidate
+
+
+def load_release_metadata(repository_root: Path | str) -> dict[str, Any]:
+    """Load and boundedly validate the canonical release version source."""
+    root = Path(repository_root).resolve()
+    metadata = _read_object(root / METADATA_PATH)
+    if metadata.get("$schema") != SCHEMA_ID or metadata.get("schema_version") != SCHEMA_VERSION:
+        raise ReleaseMetadataError("release metadata schema identity is invalid")
+    auditability = metadata.get("source_auditability")
+    if not isinstance(auditability, dict) or auditability.get("state") not in {
+        "source_complete",
+        "source_partial",
+        "runtime_only",
+        "unknown",
+    }:
+        raise ReleaseMetadataError("source auditability state must be explicit")
+    if not isinstance(auditability.get("statement"), str) or not auditability["statement"]:
+        raise ReleaseMetadataError("source auditability statement is required")
+    components = metadata.get("components")
+    if not isinstance(components, list) or not components or len(components) > 64:
+        raise ReleaseMetadataError("release metadata requires 1..64 components")
+    names: set[str] = set()
+    for component in components:
+        if not isinstance(component, dict):
+            raise ReleaseMetadataError("release component must be an object")
+        name, version = component.get("name"), component.get("version")
+        if not isinstance(name, str) or not _COMPONENT_RE.fullmatch(name):
+            raise ReleaseMetadataError("release component name is invalid")
+        if name in names:
+            raise ReleaseMetadataError(f"duplicate release component: {name}")
+        names.add(name)
+        if not isinstance(version, str) or not _VERSION_RE.fullmatch(version):
+            raise ReleaseMetadataError(f"release component version is invalid: {name}")
+        for field in ("plugin_manifest", "deployment_manifest", "install_document"):
+            _relative_path(root, component.get(field))
+        install = component.get("install")
+        if not isinstance(install, dict) or not isinstance(install.get("summary"), str):
+            raise ReleaseMetadataError(f"release install metadata is invalid: {name}")
+        steps = install.get("steps")
+        if not isinstance(steps, list) or not steps or not all(
+            isinstance(step, str) and step for step in steps
+        ):
+            raise ReleaseMetadataError(f"release install steps are invalid: {name}")
+    return metadata
+
+
+def _component(metadata: Mapping[str, Any], name: str) -> Mapping[str, Any]:
+    matches = [item for item in metadata["components"] if item["name"] == name]
+    if len(matches) != 1:
+        raise ReleaseMetadataError(f"component is not in canonical release metadata: {name}")
+    return matches[0]
+
+
+def _install_bytes(metadata: Mapping[str, Any], component: Mapping[str, Any]) -> bytes:
+    auditability = metadata["source_auditability"]
+    lines = [
+        f"# {component['name']} {component['version']}",
+        "",
+        "This file is generated by `scripts/generate_release_metadata.py`; "
+        "do not edit it directly.",
+        "",
+        str(component["install"]["summary"]),
+        "",
+        "## Installation",
+        "",
+    ]
+    lines.extend(f"{index}. {step}" for index, step in enumerate(component["install"]["steps"], 1))
+    lines.extend(
+        [
+            "",
+            "## Source auditability",
+            "",
+            f"State: `{auditability['state']}`",
+            "",
+            str(auditability["statement"]),
+            "",
+        ]
+    )
+    return "\n".join(lines).encode("utf-8")
+
+
+def _json_bytes(value: object) -> bytes:
+    return (json.dumps(value, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+
+
+def _expected_surfaces(
+    root: Path, metadata: Mapping[str, Any], component: Mapping[str, Any]
+) -> tuple[tuple[Path, bytes], ...]:
+    name, version = component["name"], component["version"]
+    plugin_path = _relative_path(root, component["plugin_manifest"])
+    deployment_path = _relative_path(root, component["deployment_manifest"])
+    plugin = _read_object(plugin_path)
+    deployment = _read_object(deployment_path)
+    if plugin.get("name") != name:
+        raise ReleaseMetadataError(f"plugin manifest name disagrees with release metadata: {name}")
+    deployment_plugin = deployment.get("plugin")
+    if not isinstance(deployment_plugin, dict) or deployment_plugin.get("name") != name:
+        raise ReleaseMetadataError(
+            f"deployment manifest name disagrees with release metadata: {name}"
+        )
+    plugin["version"] = version
+    deployment_plugin["version"] = version
+    return (
+        (plugin_path, _json_bytes(plugin)),
+        (deployment_path, _json_bytes(deployment)),
+        (_relative_path(root, component["install_document"]), _install_bytes(metadata, component)),
+    )
+
+
+def generate_repository_release(repository_root: Path | str) -> tuple[Path, ...]:
+    """Generate every version-bearing release surface from the canonical source."""
+    root = Path(repository_root).resolve()
+    metadata = load_release_metadata(root)
+    written: list[Path] = []
+    for component in metadata["components"]:
+        for path, content in _expected_surfaces(root, metadata, component):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(content)
+            written.append(path)
+    return tuple(written)
+
+
+def check_repository_release(
+    repository_root: Path | str, *, component_name: str | None = None
+) -> None:
+    """Fail a packaging gate when any generated release surface has drifted."""
+    root = Path(repository_root).resolve()
+    metadata = load_release_metadata(root)
+    components = (
+        [_component(metadata, component_name)] if component_name else metadata["components"]
+    )
+    for component in components:
+        name, canonical = component["name"], component["version"]
+        for path, expected in _expected_surfaces(root, metadata, component):
+            if not path.is_file():
+                raise ReleaseMetadataError(f"generated release surface is missing: {path}")
+            observed = path.read_bytes()
+            if observed != expected:
+                version = "unknown"
+                if path.suffix == ".json":
+                    value = _read_object(path)
+                    plugin = value if "name" in value else value.get("plugin", {})
+                    version = (
+                        plugin.get("version", "unknown")
+                        if isinstance(plugin, dict)
+                        else "unknown"
+                    )
+                raise ReleaseMetadataError(
+                    f"release version mismatch for {name}: canonical={canonical}, "
+                    f"observed={version}, surface={path.relative_to(root).as_posix()}"
+                )
+
+
+def _git_revision(root: Path) -> str:
+    completed = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    revision = completed.stdout.strip().lower()
+    if (
+        completed.returncode != 0
+        or len(revision) not in (40, 64)
+        or not _HEX_RE.fullmatch(revision)
+    ):
+        raise ReleaseMetadataError("source revision is unavailable")
+    return revision
+
+
+def _git_revision_state(root: Path) -> str:
+    completed = subprocess.run(
+        ["git", "status", "--porcelain", "--untracked-files=no"],
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    if completed.returncode != 0:
+        raise ReleaseMetadataError("source revision state is unavailable")
+    return "modified_worktree" if completed.stdout.strip() else "clean"
+
+
+def packaging_source_provenance(
+    repository_root: Path | str,
+    *,
+    component_name: str,
+    staged_tree_sha256: str,
+    recipe_path: Path | str,
+    source_revision: str | None = None,
+    source_revision_state: str | None = None,
+    toolchain: Mapping[str, str] | None = None,
+) -> dict[str, Any]:
+    """Create deterministic source provenance for one staged package tree."""
+    root = Path(repository_root).resolve()
+    metadata = load_release_metadata(root)
+    _component(metadata, component_name)
+    check_repository_release(root, component_name=component_name)
+    if len(staged_tree_sha256) != 64 or not _HEX_RE.fullmatch(staged_tree_sha256):
+        raise ReleaseMetadataError("staged source-tree SHA-256 is invalid")
+    revision = (source_revision or _git_revision(root)).lower()
+    if len(revision) not in (40, 64) or not _HEX_RE.fullmatch(revision):
+        raise ReleaseMetadataError("source revision identity is invalid")
+    recipe = Path(recipe_path).resolve()
+    try:
+        recipe_relative = recipe.relative_to(root).as_posix()
+    except ValueError as exc:
+        raise ReleaseMetadataError("packaging recipe is outside the repository") from exc
+    if not recipe.is_file():
+        raise ReleaseMetadataError("packaging recipe is unavailable")
+    identity = dict(toolchain or {
+        "name": platform.python_implementation(),
+        "version": platform.python_version(),
+    })
+    if not identity.get("name") or not identity.get("version"):
+        raise ReleaseMetadataError("toolchain name and version are required")
+    revision_state = source_revision_state or (
+        "provided" if source_revision else _git_revision_state(root)
+    )
+    if revision_state not in {"clean", "modified_worktree", "provided"}:
+        raise ReleaseMetadataError("source revision state is invalid")
+    return {
+        "source_auditability": dict(metadata["source_auditability"]),
+        "source_revision": revision,
+        "source_revision_state": revision_state,
+        "source_tree_sha256": staged_tree_sha256,
+        "recipe": {
+            "path": recipe_relative,
+            "sha256": hashlib.sha256(recipe.read_bytes()).hexdigest(),
+        },
+        "toolchain": {"name": identity["name"], "version": identity["version"]},
+    }

@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/native-symbol-layout-registry-v1.schema.json",
+  "title": "KCD2 native symbol and layout registry import event v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "registry_event_id",
+    "recorded_at",
+    "module",
+    "evidence_artifacts",
+    "entries",
+    "contradictions"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.native-symbol-layout-registry.v1"},
+    "registry_event_id": {"$ref": "#/$defs/id"},
+    "recorded_at": {"type": "string", "format": "date-time", "maxLength": 64},
+    "module": {"$ref": "#/$defs/module"},
+    "evidence_artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100000,
+      "items": {"$ref": "#/$defs/evidence_artifact"}
+    },
+    "entries": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {"$ref": "#/$defs/entry"}
+    },
+    "contradictions": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {"$ref": "#/$defs/contradiction"}
+    }
+  },
+  "anyOf": [
+    {"properties": {"entries": {"minItems": 1}}},
+    {"properties": {"contradictions": {"minItems": 1}}}
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "short_text": {"type": "string", "minLength": 1, "maxLength": 512},
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewed_by", "reviewed_at"],
+      "properties": {
+        "reviewed_by": {"type": "string", "minLength": 1, "maxLength": 256},
+        "reviewed_at": {"type": "string", "format": "date-time", "maxLength": 64}
+      }
+    },
+    "module": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "sha256", "timestamp", "image_size"],
+      "properties": {
+        "name": {"$ref": "#/$defs/short_text"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "timestamp": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "image_size": {"type": "integer", "minimum": 1, "maximum": 4294967295}
+      }
+    },
+    "evidence_ids": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/id"}
+    },
+    "evidence_artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_id",
+        "artifact_sha256",
+        "artifact_type",
+        "evidence_class",
+        "exact_locator"
+      ],
+      "properties": {
+        "evidence_id": {"$ref": "#/$defs/id"},
+        "artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "artifact_type": {"type": "string", "minLength": 1, "maxLength": 128},
+        "evidence_class": {
+          "enum": ["static", "runtime", "user_confirmed", "causal"]
+        },
+        "exact_locator": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "record_family": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    },
+    "prototype": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["declaration", "calling_convention"],
+      "properties": {
+        "declaration": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "calling_convention": {"type": "string", "minLength": 1, "maxLength": 128}
+      }
+    },
+    "unwind": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["end_rva", "unwind_info_rva"],
+      "properties": {
+        "end_rva": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "unwind_info_rva": {"type": "integer", "minimum": 0, "maximum": 4294967295}
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entry_id",
+        "entry_type",
+        "status",
+        "semantic_name",
+        "evidence_ids",
+        "confidence",
+        "review"
+      ],
+      "properties": {
+        "entry_id": {"$ref": "#/$defs/id"},
+        "entry_type": {
+          "enum": [
+            "function",
+            "caller_site",
+            "vtable_rtti",
+            "record_family",
+            "field_offset",
+            "identity_field",
+            "entry_lock",
+            "prototype_abi",
+            "unwind_range",
+            "structural_fingerprint"
+          ]
+        },
+        "status": {
+          "enum": [
+            "PROPOSED",
+            "STATICALLY_SUPPORTED",
+            "RUNTIME_SUPPORTED",
+            "CONFIRMED",
+            "SUPERSEDED",
+            "REJECTED"
+          ]
+        },
+        "semantic_name": {"$ref": "#/$defs/short_text"},
+        "rva": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "record_family": {"type": "string", "minLength": 1, "maxLength": 256},
+        "offset": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "identity_type": {
+          "enum": [
+            "fragment_guid",
+            "table_row_identity",
+            "record_pointer_ephemeral",
+            "database_index",
+            "dispatch_id",
+            "predicate_flag",
+            "predicate_value",
+            "target_mask",
+            "record_field",
+            "unknown_discovery_candidate"
+          ]
+        },
+        "entry_bytes_hex": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 512,
+          "pattern": "^(?:[0-9A-Fa-f]{2})+$"
+        },
+        "prototype": {"$ref": "#/$defs/prototype"},
+        "unwind": {"$ref": "#/$defs/unwind"},
+        "structural_fingerprint": {"$ref": "#/$defs/sha256"},
+        "evidence_ids": {"$ref": "#/$defs/evidence_ids"},
+        "confidence": {"enum": ["LOW", "MEDIUM", "HIGH"]},
+        "review": {"$ref": "#/$defs/review"},
+        "supersedes": {"$ref": "#/$defs/id"},
+        "notes": {"type": "string", "minLength": 1, "maxLength": 8192}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "entry_type": {
+                "enum": [
+                  "function",
+                  "caller_site",
+                  "vtable_rtti",
+                  "entry_lock",
+                  "prototype_abi",
+                  "unwind_range",
+                  "structural_fingerprint"
+                ]
+              }
+            }
+          },
+          "then": {"required": ["rva"]}
+        },
+        {
+          "if": {"properties": {"entry_type": {"enum": ["field_offset", "identity_field"]}}},
+          "then": {"required": ["record_family", "offset"]}
+        },
+        {
+          "if": {"properties": {"entry_type": {"const": "identity_field"}}},
+          "then": {"required": ["identity_type"]}
+        },
+        {
+          "if": {"properties": {"entry_type": {"const": "entry_lock"}}},
+          "then": {"required": ["entry_bytes_hex"]}
+        },
+        {
+          "if": {"properties": {"entry_type": {"const": "prototype_abi"}}},
+          "then": {"required": ["prototype"]}
+        },
+        {
+          "if": {"properties": {"entry_type": {"const": "unwind_range"}}},
+          "then": {"required": ["unwind"]}
+        },
+        {
+          "if": {"properties": {"entry_type": {"const": "structural_fingerprint"}}},
+          "then": {"required": ["structural_fingerprint"]}
+        }
+      ]
+    },
+    "contradiction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contradiction_id",
+        "subject_entry_ids",
+        "status",
+        "reason",
+        "evidence_ids",
+        "review"
+      ],
+      "properties": {
+        "contradiction_id": {"$ref": "#/$defs/id"},
+        "subject_entry_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"}
+        },
+        "status": {"enum": ["OPEN", "RESOLVED", "REJECTED"]},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 8192},
+        "evidence_ids": {"$ref": "#/$defs/evidence_ids"},
+        "review": {"$ref": "#/$defs/review"},
+        "supersedes": {"$ref": "#/$defs/id"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "RESOLVED"}}},
+          "then": {"required": ["supersedes"]}
+        }
+      ]
+    }
+  }
+}

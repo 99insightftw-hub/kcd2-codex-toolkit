@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/variant-selection-v1.schema.json",
+  "title": "KCD2 content-addressed variant selection receipt",
+  "description": "VAR-001 canonical receipt. This replaces the pre-implementation per-group draft: one receipt now binds all groups to a portfolio registry identity; legacy draft records require regeneration because they carried no selection identity.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "selection_id", "portfolio_registry_id", "groups", "validation"],
+  "properties": {
+    "schema_version": {"const": "kcd2.variant-selection.v1"},
+    "selection_id": {"$ref": "#/$defs/selectionId"},
+    "portfolio_registry_id": {"type": "string", "pattern": "^registry:sha256:[0-9a-f]{64}$"},
+    "groups": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1024,
+      "items": {"$ref": "#/$defs/group"}
+    },
+    "validation": {"const": "VALID"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "selectionId": {"type": "string", "pattern": "^variant-selection:sha256:[0-9a-f]{64}$"},
+    "memberId": {"type": "string", "pattern": "^variant-member:sha256:[0-9a-f]{64}$"},
+    "relativePath": {"type": "string", "minLength": 1, "maxLength": 1024, "pattern": "^(?![A-Za-z]:)(?![/\\\\])(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$))[^\\u0000]+$"},
+    "mountContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mount_path", "priority"],
+      "properties": {
+        "mount_path": {"$ref": "#/$defs/relativePath"},
+        "priority": {"type": "integer", "minimum": -1000000, "maximum": 1000000}
+      }
+    },
+    "member": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["member_id", "artifact_sha256", "mount_context", "provided_resources", "selector"],
+      "properties": {
+        "member_id": {"$ref": "#/$defs/memberId"},
+        "artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "mount_context": {"$ref": "#/$defs/mountContext"},
+        "provided_resources": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4096,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/relativePath"}
+        },
+        "selector": {"type": ["string", "null"], "minLength": 1, "maxLength": 128}
+      }
+    },
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["group_id", "rule", "members", "selected_member_ids"],
+      "properties": {
+        "group_id": {"type": "string", "pattern": "^variant-group:sha256:[0-9a-f]{64}$"},
+        "rule": {"enum": ["EXACTLY_ONE", "ZERO_OR_ONE", "ALL_REQUIRED", "LANGUAGE", "PLATFORM", "PRESET"]},
+        "members": {"type": "array", "minItems": 1, "maxItems": 4096, "items": {"$ref": "#/$defs/member"}},
+        "selected_member_ids": {"type": "array", "maxItems": 4096, "uniqueItems": true, "items": {"$ref": "#/$defs/memberId"}}
+      }
+    }
+  }
+}

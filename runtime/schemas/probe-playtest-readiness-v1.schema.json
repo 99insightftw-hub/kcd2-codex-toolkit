@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/probe-playtest-readiness-v1.schema.json",
+  "title": "KCD2 probe playtest readiness receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "request_id", "input_sha256", "receipt_id", "probe_id", "session_id",
+    "module_sha256", "status", "gameplay_handoff_allowed", "checks", "failure_reasons",
+    "next_action", "x64dbg_proof_request"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.probe-playtest-readiness.v1"},
+    "request_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "input_sha256": {"$ref": "#/$defs/sha256"},
+    "receipt_id": {"type": "string", "pattern": "^readiness:sha256:[A-Fa-f0-9]{64}$"},
+    "probe_id": {"type": ["string", "null"], "maxLength": 256},
+    "session_id": {"type": ["string", "null"], "maxLength": 256},
+    "module_sha256": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+    "status": {"enum": ["READY", "BLOCKED"]},
+    "gameplay_handoff_allowed": {"type": "boolean"},
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "module_profile", "record_layout", "entry_lock", "prototype_trampoline",
+        "caller_owner_correlation", "source_manifest_compiled", "controls",
+        "negative_validity_policy", "event_bounds", "boot_install_ok", "responsiveness",
+        "debugger_state", "deployment_identity"
+      ],
+      "properties": {
+        "module_profile": {"type": "boolean"},
+        "record_layout": {"type": "boolean"},
+        "entry_lock": {"type": "boolean"},
+        "prototype_trampoline": {"type": "boolean"},
+        "caller_owner_correlation": {"type": "boolean"},
+        "source_manifest_compiled": {"type": "boolean"},
+        "controls": {"type": "boolean"},
+        "negative_validity_policy": {"type": "boolean"},
+        "event_bounds": {"type": "boolean"},
+        "boot_install_ok": {"type": "boolean"},
+        "responsiveness": {"type": "boolean"},
+        "debugger_state": {"type": "boolean"},
+        "deployment_identity": {"type": "boolean"}
+      }
+    },
+    "failure_reasons": {
+      "type": "array", "maxItems": 17, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/failure_reason"}
+    },
+    "next_action": {"enum": ["user_gameplay", "bounded_x64dbg_proof", "repair_preflight"]},
+    "x64dbg_proof_request": {
+      "anyOf": [{"type": "null"}, {"$ref": "#/$defs/x64dbg_proof_request"}]
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+    "failure_reason": {
+      "enum": [
+        "MANIFEST_INVALID", "MODULE_PROFILE_MISMATCH", "RECORD_LAYOUT_INVALID",
+        "ENTRY_LOCK_INVALID", "PROTOTYPE_ABI_UNRESOLVED", "STOLEN_INSTRUCTIONS_UNSAFE",
+        "TRAMPOLINE_UNSAFE", "CALLER_OWNER_CORRELATION_UNRESOLVED",
+        "SOURCE_MANIFEST_COMPILED_MISMATCH", "CONTROLS_INSUFFICIENT",
+        "NEGATIVE_VALIDITY_POLICY_INCOMPLETE", "EVENT_BOUNDS_INVALID",
+        "BOOT_NOT_CONFIRMED", "INSTALL_OK_INVALID", "PROCESS_UNRESPONSIVE",
+        "DEBUGGER_HANDOFF_UNSAFE", "DEPLOYMENT_IDENTITY_INVALID"
+      ]
+    },
+    "x64dbg_proof_request": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "proof_count", "module_sha256", "questions", "checkpoint_candidates",
+        "maximum_breakpoints", "maximum_events", "maximum_capture_bytes",
+        "required_observations", "mutation_policy"
+      ],
+      "properties": {
+        "proof_count": {"const": 1},
+        "module_sha256": {"$ref": "#/$defs/sha256"},
+        "questions": {
+          "type": "array", "minItems": 1, "maxItems": 2, "uniqueItems": true,
+          "items": {"enum": ["PROTOTYPE_ABI_UNRESOLVED", "CALLER_OWNER_CORRELATION_UNRESOLVED"]}
+        },
+        "checkpoint_candidates": {
+          "type": "array", "minItems": 1, "maxItems": 2,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["hook_id", "location"],
+            "properties": {
+              "hook_id": {"type": "string", "minLength": 1, "maxLength": 128},
+              "location": {"type": "string", "pattern": "^WHGame\\.dll\\+0x[A-Fa-f0-9]+$"}
+            }
+          }
+        },
+        "maximum_breakpoints": {"type": "integer", "minimum": 1, "maximum": 2},
+        "maximum_events": {"type": "integer", "minimum": 1, "maximum": 64},
+        "maximum_capture_bytes": {"type": "integer", "minimum": 1, "maximum": 65536},
+        "required_observations": {
+          "type": "array", "minItems": 4, "maxItems": 4, "uniqueItems": true,
+          "items": {"enum": ["arguments", "call_stack", "pointer_lifetime", "thread_identity"]}
+        },
+        "mutation_policy": {"const": "read_only"}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "READY"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "gameplay_handoff_allowed": {"const": true},
+          "failure_reasons": {"maxItems": 0},
+          "next_action": {"const": "user_gameplay"},
+          "x64dbg_proof_request": {"type": "null"},
+          "checks": {
+            "properties": {
+              "module_profile": {"const": true}, "record_layout": {"const": true},
+              "entry_lock": {"const": true}, "prototype_trampoline": {"const": true},
+              "caller_owner_correlation": {"const": true},
+              "source_manifest_compiled": {"const": true}, "controls": {"const": true},
+              "negative_validity_policy": {"const": true}, "event_bounds": {"const": true},
+              "boot_install_ok": {"const": true}, "responsiveness": {"const": true},
+              "debugger_state": {"const": true}, "deployment_identity": {"const": true}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"next_action": {"const": "bounded_x64dbg_proof"}},
+        "required": ["next_action"]
+      },
+      "then": {"properties": {"x64dbg_proof_request": {"$ref": "#/$defs/x64dbg_proof_request"}}}
+    },
+    {
+      "if": {"properties": {"status": {"const": "BLOCKED"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "gameplay_handoff_allowed": {"const": false},
+          "failure_reasons": {"minItems": 1}
+        }
+      }
+    }
+  ]
+}

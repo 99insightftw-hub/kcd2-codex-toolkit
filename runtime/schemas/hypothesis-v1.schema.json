@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/hypothesis-v1.schema.json",
+  "title": "Immutable hypothesis record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_id",
+    "hypothesis_id",
+    "investigation_id",
+    "revision",
+    "previous_record_sha256",
+    "statement",
+    "scope",
+    "state",
+    "confidence",
+    "evidence_links",
+    "unresolved_discriminators",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.hypothesis.v1"},
+    "record_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "hypothesis_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "investigation_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "revision": {"type": "integer", "minimum": 0, "maximum": 4095},
+    "previous_record_sha256": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "statement": {"type": "string", "minLength": 1, "maxLength": 4096},
+    "scope": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    },
+    "state": {"$ref": "#/$defs/state"},
+    "confidence": {"$ref": "#/$defs/confidence"},
+    "evidence_links": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 512,
+      "items": {"$ref": "#/$defs/evidence_link"}
+    },
+    "unresolved_discriminators": {
+      "type": "array",
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 512}
+    },
+    "outcome_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "created_at": {"type": "string", "format": "date-time"}
+  },
+  "$defs": {
+    "state": {
+      "enum": ["OPEN", "SUPPORTED", "CONTRADICTED", "INCONCLUSIVE", "SUPERSEDED"]
+    },
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lower", "upper", "basis_evidence_ids"],
+      "properties": {
+        "lower": {"type": "number", "minimum": 0, "maximum": 1},
+        "upper": {"type": "number", "minimum": 0, "maximum": 1},
+        "basis_evidence_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 512,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 256}
+        }
+      }
+    },
+    "evidence_link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_id",
+        "relation",
+        "semantic_type",
+        "evidence_grade",
+        "negative_validity"
+      ],
+      "properties": {
+        "evidence_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "relation": {"enum": ["SUPPORTS", "CONTRADICTS", "CONTEXT"]},
+        "semantic_type": {"type": "string", "minLength": 1, "maxLength": 128},
+        "evidence_grade": {
+          "enum": ["E0", "E1", "E2", "E3", "E4", "E5", "E6", "unknown"]
+        },
+        "negative_validity": {
+          "enum": ["NOT_NEGATIVE", "CONFIRMED_NEGATIVE", "CAPTURE_INCONCLUSIVE"]
+        }
+      }
+    }
+  }
+}

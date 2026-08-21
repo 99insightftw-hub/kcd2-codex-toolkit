@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kcd2.local/schemas/readonly-preflight-result-v1.schema.json",
+  "title": "KCD2 R7 read-only preflight result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_id",
+    "recommendation",
+    "summary",
+    "predicted_paths",
+    "predicted_read_contracts",
+    "predicted_write_contracts",
+    "predicted_shared_contracts",
+    "recommended_focused_tests",
+    "predicted_collisions",
+    "estimated_orientation_minutes",
+    "reasoning_effort_recommendation",
+    "service_tier_recommendation",
+    "false_blocker_risk",
+    "evidence_gaps"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.readonly-preflight-result.v1"
+    },
+    "task_id": {
+      "type": "string",
+      "pattern": "^[A-Z]+-[0-9]{3}$"
+    },
+    "recommendation": {
+      "enum": ["READY_ADVISORY", "REVIEW_REQUIRED", "BLOCKED_ADVISORY"]
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "predicted_paths": {
+      "$ref": "#/$defs/boundedStrings"
+    },
+    "predicted_read_contracts": {
+      "$ref": "#/$defs/boundedStrings"
+    },
+    "predicted_write_contracts": {
+      "$ref": "#/$defs/boundedStrings"
+    },
+    "predicted_shared_contracts": {
+      "$ref": "#/$defs/boundedStrings"
+    },
+    "recommended_focused_tests": {
+      "$ref": "#/$defs/boundedStrings"
+    },
+    "predicted_collisions": {
+      "$ref": "#/$defs/boundedStrings"
+    },
+    "estimated_orientation_minutes": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 240
+    },
+    "reasoning_effort_recommendation": {
+      "enum": ["low", "medium", "high", "xhigh"]
+    },
+    "service_tier_recommendation": {
+      "enum": ["standard", "fast"]
+    },
+    "false_blocker_risk": {
+      "enum": ["low", "medium", "high"]
+    },
+    "evidence_gaps": {
+      "$ref": "#/$defs/boundedStrings"
+    }
+  },
+  "$defs": {
+    "boundedStrings": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500
+      }
+    }
+  }
+}

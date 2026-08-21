@@ -1,0 +1,349 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/localization-asset-audit-v1.schema.json",
+  "title": "KCD2 mount-aware localization, dialog, and asset audit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "snapshot_id",
+    "input_sha256",
+    "status",
+    "reason_codes",
+    "no_conflict_claim_allowed",
+    "providers",
+    "languages",
+    "localization_graph",
+    "conflicts",
+    "diagnostics",
+    "assets",
+    "bounds",
+    "verdict"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.localization-asset-audit.v1"},
+    "snapshot_id": {"$ref": "#/$defs/text"},
+    "input_sha256": {"$ref": "#/$defs/sha256"},
+    "status": {"enum": ["resolved", "issues_found", "capture_inconclusive"]},
+    "reason_codes": {
+      "type": "array",
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "AMBIGUOUS_PROVIDER_PRIORITY",
+          "INCOMPLETE_LANGUAGE_COVERAGE",
+          "REQUIRED_LANGUAGE_MOUNT_MISSING"
+        ]
+      }
+    },
+    "no_conflict_claim_allowed": {"type": "boolean"},
+    "providers": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {"$ref": "#/$defs/provider"}
+    },
+    "languages": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {"$ref": "#/$defs/language"}
+    },
+    "localization_graph": {"$ref": "#/$defs/graph"},
+    "conflicts": {
+      "type": "array",
+      "maxItems": 20000,
+      "items": {"$ref": "#/$defs/conflict"}
+    },
+    "diagnostics": {
+      "type": "array",
+      "maxItems": 60000,
+      "items": {"$ref": "#/$defs/diagnostic"}
+    },
+    "assets": {
+      "type": "array",
+      "maxItems": 20000,
+      "items": {"$ref": "#/$defs/asset"}
+    },
+    "bounds": {"$ref": "#/$defs/bounds"},
+    "verdict": {"enum": ["VALID", "INVALID", "INCONCLUSIVE"]}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 2048},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nullableCitation": {
+      "oneOf": [{"$ref": "#/$defs/citation"}, {"type": "null"}]
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_id",
+        "project_id",
+        "state",
+        "priority",
+        "active_provider_sha256",
+        "source_ref"
+      ],
+      "properties": {
+        "provider_id": {"$ref": "#/$defs/text"},
+        "project_id": {"$ref": "#/$defs/text"},
+        "state": {"enum": ["loaded", "present", "inactive", "malformed", "unknown"]},
+        "priority": {"type": "integer", "minimum": 0, "maximum": 65535},
+        "active_provider_sha256": {"$ref": "#/$defs/sha256"},
+        "source_ref": {"$ref": "#/$defs/text"}
+      }
+    },
+    "citation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_id",
+        "project_id",
+        "active_provider_sha256",
+        "priority",
+        "source_ref"
+      ],
+      "properties": {
+        "provider_id": {"$ref": "#/$defs/text"},
+        "project_id": {"$ref": "#/$defs/text"},
+        "active_provider_sha256": {"$ref": "#/$defs/sha256"},
+        "priority": {"type": "integer", "minimum": 0, "maximum": 65535},
+        "source_ref": {"$ref": "#/$defs/text"}
+      }
+    },
+    "language": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "language",
+        "mount_id",
+        "mount_context",
+        "provider_id",
+        "keys",
+        "voice_files",
+        "coverage"
+      ],
+      "properties": {
+        "language": {"$ref": "#/$defs/text"},
+        "mount_id": {"$ref": "#/$defs/text"},
+        "mount_context": {"$ref": "#/$defs/text"},
+        "provider_id": {"$ref": "#/$defs/text"},
+        "keys": {
+          "type": "array",
+          "maxItems": 20000,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/text"}
+        },
+        "voice_files": {
+          "type": "array",
+          "maxItems": 20000,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/text"}
+        },
+        "coverage": {"enum": ["COMPLETE", "PARTIAL", "UNSUPPORTED"]}
+      }
+    },
+    "translationCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text_sha256", "provider"],
+      "properties": {
+        "text_sha256": {"$ref": "#/$defs/sha256"},
+        "provider": {"$ref": "#/$defs/citation"}
+      }
+    },
+    "keyNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "language",
+        "mount_id",
+        "mount_context",
+        "key",
+        "candidates",
+        "winner"
+      ],
+      "properties": {
+        "language": {"$ref": "#/$defs/text"},
+        "mount_id": {"$ref": "#/$defs/text"},
+        "mount_context": {"$ref": "#/$defs/text"},
+        "key": {"$ref": "#/$defs/text"},
+        "candidates": {
+          "type": "array",
+          "maxItems": 20000,
+          "items": {"$ref": "#/$defs/translationCandidate"}
+        },
+        "winner": {"$ref": "#/$defs/nullableCitation"}
+      }
+    },
+    "resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "provider"],
+      "properties": {
+        "status": {"enum": ["resolved", "missing"]},
+        "provider": {"$ref": "#/$defs/nullableCitation"}
+      }
+    },
+    "dialog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dialog_id",
+        "language",
+        "mount_id",
+        "mount_context",
+        "localization_key",
+        "voice_filename",
+        "provider",
+        "translation_resolution",
+        "voice_resolution"
+      ],
+      "properties": {
+        "dialog_id": {"$ref": "#/$defs/text"},
+        "language": {"$ref": "#/$defs/text"},
+        "mount_id": {"$ref": "#/$defs/text"},
+        "mount_context": {"$ref": "#/$defs/text"},
+        "localization_key": {"$ref": "#/$defs/text"},
+        "voice_filename": {"$ref": "#/$defs/text"},
+        "provider": {"$ref": "#/$defs/citation"},
+        "translation_resolution": {"$ref": "#/$defs/resolution"},
+        "voice_resolution": {"$ref": "#/$defs/resolution"}
+      }
+    },
+    "voice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "voice_id",
+        "language",
+        "mount_id",
+        "mount_context",
+        "filename",
+        "provider"
+      ],
+      "properties": {
+        "voice_id": {"$ref": "#/$defs/text"},
+        "language": {"$ref": "#/$defs/text"},
+        "mount_id": {"$ref": "#/$defs/text"},
+        "mount_context": {"$ref": "#/$defs/text"},
+        "filename": {"$ref": "#/$defs/text"},
+        "provider": {"$ref": "#/$defs/citation"}
+      }
+    },
+    "graph": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["keys", "dialogs", "voices"],
+      "properties": {
+        "keys": {
+          "type": "array",
+          "maxItems": 20000,
+          "items": {"$ref": "#/$defs/keyNode"}
+        },
+        "dialogs": {
+          "type": "array",
+          "maxItems": 20000,
+          "items": {"$ref": "#/$defs/dialog"}
+        },
+        "voices": {
+          "type": "array",
+          "maxItems": 20000,
+          "items": {"$ref": "#/$defs/voice"}
+        }
+      }
+    },
+    "conflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "language",
+        "mount_id",
+        "mount_context",
+        "key",
+        "candidate_providers",
+        "winner"
+      ],
+      "properties": {
+        "language": {"$ref": "#/$defs/text"},
+        "mount_id": {"$ref": "#/$defs/text"},
+        "mount_context": {"$ref": "#/$defs/text"},
+        "key": {"$ref": "#/$defs/text"},
+        "candidate_providers": {
+          "type": "array",
+          "maxItems": 20000,
+          "items": {"$ref": "#/$defs/citation"}
+        },
+        "winner": {"$ref": "#/$defs/nullableCitation"}
+      }
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "language"],
+      "properties": {
+        "code": {
+          "enum": [
+            "INCOMPLETE_LANGUAGE_COVERAGE",
+            "MISSING_DIALOG_TRANSLATION",
+            "MISSING_TRANSLATION",
+            "MISSING_VOICE_REFERENCE",
+            "REQUIRED_LANGUAGE_MOUNT_MISSING"
+          ]
+        },
+        "language": {"$ref": "#/$defs/text"},
+        "mount_id": {"$ref": "#/$defs/text"},
+        "mount_context": {"$ref": "#/$defs/text"},
+        "key": {"$ref": "#/$defs/text"},
+        "dialog_id": {"$ref": "#/$defs/text"},
+        "voice_filename": {"$ref": "#/$defs/text"}
+      }
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonical_path", "kind", "resolved", "provider_id", "diagnostics"],
+      "properties": {
+        "canonical_path": {"$ref": "#/$defs/text"},
+        "kind": {
+          "enum": ["GFX", "DDS", "MATERIAL", "PARTICLE", "MODEL", "AUDIO", "ANIMEVENT", "OTHER"]
+        },
+        "resolved": {"type": "boolean"},
+        "provider_id": {"oneOf": [{"$ref": "#/$defs/text"}, {"type": "null"}]},
+        "diagnostics": {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {"$ref": "#/$defs/text"}
+        }
+      }
+    },
+    "bounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_providers",
+        "max_mounts",
+        "max_keys",
+        "max_dialogs",
+        "max_voices",
+        "providers_considered",
+        "mounts_considered",
+        "translations_considered",
+        "dialogs_considered",
+        "voices_considered"
+      ],
+      "properties": {
+        "max_providers": {"const": 4096},
+        "max_mounts": {"const": 4096},
+        "max_keys": {"const": 20000},
+        "max_dialogs": {"const": 20000},
+        "max_voices": {"const": 20000},
+        "providers_considered": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "mounts_considered": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "translations_considered": {"type": "integer", "minimum": 0, "maximum": 20000},
+        "dialogs_considered": {"type": "integer", "minimum": 0, "maximum": 20000},
+        "voices_considered": {"type": "integer", "minimum": 0, "maximum": 20000}
+      }
+    }
+  }
+}

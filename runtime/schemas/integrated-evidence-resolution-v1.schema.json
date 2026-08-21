@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/integrated-evidence-resolution-v1.schema.json",
+  "title": "KCD2 integrated evidence resolution v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "engine",
+    "mode",
+    "snapshot_id",
+    "coverage_id",
+    "status",
+    "identity",
+    "source_handles",
+    "coverage_gaps",
+    "current_providers",
+    "route_evidence",
+    "runtime_evidence",
+    "engine_report"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.integrated-evidence-resolution.v1"},
+    "request_id": {"$ref": "#/$defs/text"},
+    "engine": {"enum": ["effective_load_order", "combat_route", "inventory"]},
+    "mode": {"enum": ["automatic", "explicit"]},
+    "snapshot_id": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048},
+    "coverage_id": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048},
+    "status": {"enum": ["resolved", "capture_inconclusive"]},
+    "identity": {"type": "object"},
+    "source_handles": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {"$ref": "#/$defs/source_handle"}
+    },
+    "coverage_gaps": {
+      "type": "array",
+      "maxItems": 1048576,
+      "items": {"$ref": "#/$defs/coverage_gap"}
+    },
+    "current_providers": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {"$ref": "#/$defs/current_provider"}
+    },
+    "route_evidence": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {"$ref": "#/$defs/route_evidence"}
+    },
+    "runtime_evidence": {"type": ["object", "null"]},
+    "engine_report": {"type": "object"}
+  },
+  "$defs": {
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "pattern": "^[^\\u0000]+$"
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "source_handle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "source_handle", "sha256", "acquisition"],
+      "properties": {
+        "kind": {"$ref": "#/$defs/text"},
+        "source_handle": {"$ref": "#/$defs/text"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "acquisition": {"enum": ["inline", "fallback", "explicit"]}
+      }
+    },
+    "coverage_gap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "source", "detail"],
+      "properties": {
+        "code": {"type": "string", "pattern": "^[A-Z0-9_]+$", "maxLength": 128},
+        "source": {"$ref": "#/$defs/text"},
+        "detail": {"type": "string", "minLength": 1, "maxLength": 4096}
+      }
+    },
+    "current_provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope", "winner_provider_id", "contributor_provider_ids"],
+      "properties": {
+        "scope": {"$ref": "#/$defs/text"},
+        "winner_provider_id": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048},
+        "contributor_provider_ids": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": {"$ref": "#/$defs/text"}
+        }
+      }
+    },
+    "route_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "route_id",
+        "table_row_selector",
+        "fragment_guid",
+        "animation_local_ids",
+        "timings",
+        "animevents"
+      ],
+      "properties": {
+        "route_id": {"$ref": "#/$defs/text"},
+        "table_row_selector": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048},
+        "fragment_guid": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048},
+        "animation_local_ids": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {"$ref": "#/$defs/text"}
+        },
+        "timings": {"type": "array", "maxItems": 256, "items": {"type": "object"}},
+        "animevents": {"type": "array", "maxItems": 4096, "items": {"type": "object"}}
+      }
+    }
+  }
+}

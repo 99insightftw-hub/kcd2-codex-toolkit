@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/schemas/mod-inspection-summary-v1.schema.json",
+  "title": "KCD2 compact exact-mod inspection summary v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "target_mod_id",
+    "detail_level",
+    "provider_state",
+    "manifest",
+    "paks",
+    "package_profile",
+    "mod_order",
+    "active_state",
+    "freshness",
+    "conflicts",
+    "effective_winners",
+    "scope_receipt_id",
+    "diagnostics",
+    "recommended_next_operation"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.mod-inspection-summary.v1"
+    },
+    "target_mod_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "detail_level": {
+      "enum": [
+        "compact",
+        "normal",
+        "full"
+      ]
+    },
+    "provider_state": {
+      "enum": [
+        "LOCAL_PRESENT",
+        "WORKSHOP_PRESENT",
+        "LOCAL_AND_WORKSHOP_PRESENT",
+        "POSSIBLY_WORKSHOP_MANAGED",
+        "MISSING_CONFIRMED",
+        "WORKSHOP_COVERAGE_STALE"
+      ]
+    },
+    "manifest": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9A-Fa-f]{64}$"
+        },
+        "mod_id_matches_folder": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "mod_id_matches_folder"
+      ]
+    },
+    "paks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "sha256",
+          "container_valid"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9A-Fa-f]{64}$"
+          },
+          "container_valid": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "package_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "verdict"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "retail_stored",
+            "lineage_inherited",
+            "inspect_only",
+            "custom_declared",
+            "unknown"
+          ]
+        },
+        "verdict": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "PROFILE_MISMATCH",
+            "UNKNOWN"
+          ]
+        },
+        "recommended_profile": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "mod_order": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entry_count",
+        "state"
+      ],
+      "properties": {
+        "entry_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "state": {
+          "enum": [
+            "EXACTLY_ONE",
+            "ABSENT",
+            "DUPLICATE",
+            "NOT_CHECKED"
+          ]
+        }
+      }
+    },
+    "active_state": {
+      "enum": [
+        "ACTIVE_CONFIRMED",
+        "INACTIVE_CONFIRMED",
+        "UNKNOWN"
+      ]
+    },
+    "freshness": {
+      "enum": [
+        "FRESH_EXACT",
+        "PARTIAL",
+        "STALE",
+        "UNKNOWN"
+      ]
+    },
+    "conflicts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "count",
+        "examples_truncated"
+      ],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "examples_truncated": {
+          "type": "boolean"
+        }
+      }
+    },
+    "effective_winners": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resolved",
+        "unresolved"
+      ],
+      "properties": {
+        "resolved": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unresolved": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "scope_receipt_id": {
+      "type": "string"
+    },
+    "detail_artifact": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9A-Fa-f]{64}$"
+        },
+        "cursor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "cursor"
+      ]
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "recommended_next_operation": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

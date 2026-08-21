@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.local/kcd2/integrated-private-release-v1.schema.json",
+  "title": "KCD2 integrated private release manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "task_id",
+    "release_id",
+    "classification",
+    "source",
+    "release_profile_sha256",
+    "dependencies",
+    "mandatory_task_acceptance",
+    "packages",
+    "reports",
+    "migration_guide",
+    "installation_performed",
+    "production_index_written",
+    "game_or_plugin_targets_read"
+  ],
+  "properties": {
+    "$schema": {"const": "https://schemas.local/kcd2/integrated-private-release-v1.schema.json"},
+    "schema_version": {"const": "kcd2.integrated-private-release.v1"},
+    "task_id": {"const": "REL-601"},
+    "release_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "classification": {"const": "non_live"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["revision", "revision_state"],
+      "properties": {
+        "revision": {"type": "string", "pattern": "^[a-f0-9]{40,64}$"},
+        "revision_state": {"enum": ["clean", "modified_worktree"]}
+      }
+    },
+    "release_profile_sha256": {"$ref": "#/$defs/sha256"},
+    "dependencies": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["task_id", "status"],
+        "properties": {
+          "task_id": {"enum": ["CORR-505", "REL-602", "REL-603"]},
+          "status": {"const": "done"}
+        }
+      }
+    },
+    "mandatory_task_acceptance": {"const": "passed"},
+    "packages": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {"$ref": "#/$defs/package"}
+    },
+    "reports": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 16,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/relativePath"}
+    },
+    "migration_guide": {"const": "MIGRATION.md"},
+    "installation_performed": {"const": false},
+    "production_index_written": {"const": false},
+    "game_or_plugin_targets_read": {"const": false}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]+$"
+    },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "component", "path", "sha256", "size"],
+      "properties": {
+        "role": {
+          "enum": [
+            "contract_bundle",
+            "mod_build_deploy_plugin",
+            "native_probes_plugin",
+            "research_graph_plugin"
+          ]
+        },
+        "component": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"},
+        "path": {"$ref": "#/$defs/relativePath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size": {"type": "integer", "minimum": 1, "maximum": 268435456}
+      }
+    }
+  }
+}

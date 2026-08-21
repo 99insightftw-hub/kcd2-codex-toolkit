@@ -1,0 +1,738 @@
+{
+  "schema_version": "kcd2.plugin-tool-surface.v1",
+  "plugin": {"name": "kcd2-native-probes", "version": "0.2.1+api.003"},
+  "source_revision": "2c1ad3056d4b3e4fe497b917699ad0d3f6d9dbee+API-003",
+  "tools": [
+    {
+      "tool_name": "native_capability_preflight",
+      "operation_class": "read_only_analysis",
+      "exposure_status": "REGISTERED",
+      "callable_via": "mcp_plugin",
+      "registered": true,
+      "input_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability_id"],
+        "properties": {
+          "capability_id": {"type": "string", "minLength": 1, "maxLength": 256},
+          "regular_ghidra_gui": {
+            "oneOf": [
+              {"type": "null"},
+              {"type": "string", "minLength": 1, "maxLength": 2048}
+            ],
+            "default": null
+          },
+          "regular_ghidra_headless": {
+            "oneOf": [
+              {"type": "null"},
+              {"type": "string", "minLength": 1, "maxLength": 2048}
+            ],
+            "default": null
+          },
+          "current_interpreter": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048,
+            "default": "CURRENT_PLUGIN_INTERPRETER"
+          },
+          "isolated_pyghidra_interpreters": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {"type": "string", "minLength": 1, "maxLength": 2048},
+            "default": []
+          },
+          "plugin_interpreter": {
+            "oneOf": [
+              {"type": "null"},
+              {"type": "string", "minLength": 1, "maxLength": 2048}
+            ],
+            "default": null
+          },
+          "pyghidra_required": {"type": "boolean", "default": false},
+          "x64dbg_path": {
+            "oneOf": [
+              {"type": "null"},
+              {"type": "string", "minLength": 1, "maxLength": 2048}
+            ],
+            "default": null
+          },
+          "kcse_path": {
+            "oneOf": [
+              {"type": "null"},
+              {"type": "string", "minLength": 1, "maxLength": 2048}
+            ],
+            "default": null
+          },
+          "compiler_paths": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {"type": "string", "minLength": 1, "maxLength": 2048},
+            "default": []
+          },
+          "index_mcp_tools": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {"type": "string", "minLength": 1, "maxLength": 2048},
+            "default": []
+          },
+          "game_binary_paths": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {"type": "string", "minLength": 1, "maxLength": 2048},
+            "default": []
+          },
+          "reviewed_static_evidence": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {"type": "string", "minLength": 1, "maxLength": 2048},
+            "default": []
+          },
+          "environment_profile_path": {
+            "oneOf": [
+              {"type": "null"},
+              {"type": "string", "minLength": 1, "maxLength": 2048}
+            ],
+            "default": null
+          }
+        }
+      },
+      "output_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema_version", "status", "capability_id", "regular_ghidra_available",
+          "pyghidra_effective_status", "x64dbg_available", "kcse_available",
+          "raw_pe_available", "native_workflow_blocked", "workflow_eligibility",
+          "workflow_blockers", "environment_profile_id",
+          "compatibility_profile_id", "component_proofs", "reason_codes"
+        ],
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "kcd2.native-capability-preflight-tool.v1"
+          },
+          "status": {"type": "string", "const": "PASS"},
+          "capability_id": {"type": "string", "minLength": 1, "maxLength": 256},
+          "regular_ghidra_available": {"type": "boolean"},
+          "pyghidra_effective_status": {
+            "type": "string",
+            "enum": [
+              "AVAILABLE_CURRENT_INTERPRETER", "AVAILABLE_ISOLATED",
+              "UNAVAILABLE_OPTIONAL", "MISCONFIGURED", "UNAVAILABLE_REQUIRED"
+            ]
+          },
+          "x64dbg_available": {"type": "boolean"},
+          "kcse_available": {"type": "boolean"},
+          "raw_pe_available": {"type": "boolean"},
+          "native_workflow_blocked": {"type": "boolean"},
+          "workflow_eligibility": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ghidra_first", "regular_ghidra", "pyghidra", "x64dbg", "kcse",
+              "raw_pe_preflight"
+            ],
+            "properties": {
+              "ghidra_first": {"type": "boolean"},
+              "regular_ghidra": {"type": "boolean"},
+              "pyghidra": {"type": "boolean"},
+              "x64dbg": {"type": "boolean"},
+              "kcse": {"type": "boolean"},
+              "raw_pe_preflight": {"type": "boolean"}
+            }
+          },
+          "workflow_blockers": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ghidra_first", "regular_ghidra", "pyghidra", "x64dbg", "kcse",
+              "raw_pe_preflight"
+            ],
+            "properties": {
+              "ghidra_first": {"type": "array", "maxItems": 64, "items": {"type": "string", "minLength": 1, "maxLength": 2048}},
+              "regular_ghidra": {"type": "array", "maxItems": 64, "items": {"type": "string", "minLength": 1, "maxLength": 2048}},
+              "pyghidra": {"type": "array", "maxItems": 64, "items": {"type": "string", "minLength": 1, "maxLength": 2048}},
+              "x64dbg": {"type": "array", "maxItems": 64, "items": {"type": "string", "minLength": 1, "maxLength": 2048}},
+              "kcse": {"type": "array", "maxItems": 64, "items": {"type": "string", "minLength": 1, "maxLength": 2048}},
+              "raw_pe_preflight": {"type": "array", "maxItems": 64, "items": {"type": "string", "minLength": 1, "maxLength": 2048}}
+            }
+          },
+          "environment_profile_id": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048},
+          "compatibility_profile_id": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048},
+          "component_proofs": {
+            "oneOf": [
+              {"type": "null"},
+              {
+                "type": "array",
+                "minItems": 9,
+                "maxItems": 9,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "component_id", "capability_level", "expected_version",
+                    "expected_sha256", "observed_version", "observed_sha256", "proofs"
+                  ],
+                  "properties": {
+                    "component_id": {"type": "string", "minLength": 1, "maxLength": 64},
+                    "capability_level": {"type": "string", "minLength": 1, "maxLength": 64},
+                    "expected_version": {"type": "string", "minLength": 1, "maxLength": 256},
+                    "expected_sha256": {"type": "string", "maxLength": 64, "pattern": "^[0-9A-Fa-f]{64}$"},
+                    "observed_version": {"type": ["string", "null"], "minLength": 1, "maxLength": 256},
+                    "observed_sha256": {"type": ["string", "null"], "maxLength": 64, "pattern": "^[0-9A-Fa-f]{64}$"},
+                    "proofs": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["launch", "provider", "catalog", "version_profile"],
+                      "properties": {
+                        "launch": {"type": "object", "additionalProperties": false, "required": ["status", "checked_at", "evidence"], "properties": {"status": {"type": "string", "enum": ["not_required", "not_run", "passed", "failed"]}, "checked_at": {"type": ["string", "null"], "maxLength": 64}, "evidence": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048}}},
+                        "provider": {"type": "object", "additionalProperties": false, "required": ["status", "checked_at", "evidence"], "properties": {"status": {"type": "string", "enum": ["not_required", "not_run", "passed", "failed"]}, "checked_at": {"type": ["string", "null"], "maxLength": 64}, "evidence": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048}}},
+                        "catalog": {"type": "object", "additionalProperties": false, "required": ["status", "checked_at", "evidence"], "properties": {"status": {"type": "string", "enum": ["not_required", "not_run", "passed", "failed"]}, "checked_at": {"type": ["string", "null"], "maxLength": 64}, "evidence": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048}}},
+                        "version_profile": {"type": "object", "additionalProperties": false, "required": ["status", "checked_at", "evidence"], "properties": {"status": {"type": "string", "enum": ["not_required", "not_run", "passed", "failed"]}, "checked_at": {"type": ["string", "null"], "maxLength": 64}, "evidence": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048}}}
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "reason_codes": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {"type": "string", "minLength": 1, "maxLength": 256}
+          }
+        }
+      },
+      "example": {
+        "input": {
+          "capability_id": "api-003-smoke",
+          "current_interpreter": "tests/fixtures/capability/missing-python.exe"
+        },
+        "output": {
+          "schema_version": "kcd2.native-capability-preflight-tool.v1",
+          "status": "PASS",
+          "capability_id": "api-003-smoke",
+          "regular_ghidra_available": false,
+          "pyghidra_effective_status": "UNAVAILABLE_OPTIONAL",
+          "x64dbg_available": false,
+          "kcse_available": false,
+          "raw_pe_available": false,
+          "native_workflow_blocked": true,
+          "workflow_eligibility": {
+            "ghidra_first": false,
+            "regular_ghidra": false,
+            "pyghidra": false,
+            "x64dbg": false,
+            "kcse": false,
+            "raw_pe_preflight": false
+          },
+          "workflow_blockers": {
+            "ghidra_first": ["NO_GHIDRA_OR_REVIEWED_STATIC_EVIDENCE"],
+            "regular_ghidra": ["ENVIRONMENT_PROFILE_REQUIRED"],
+            "pyghidra": ["ENVIRONMENT_PROFILE_REQUIRED", "PYGHIDRA_UNAVAILABLE_OPTIONAL"],
+            "x64dbg": ["ENVIRONMENT_PROFILE_REQUIRED"],
+            "kcse": ["ENVIRONMENT_PROFILE_REQUIRED", "NO_GHIDRA_OR_REVIEWED_STATIC_EVIDENCE"],
+            "raw_pe_preflight": ["ENVIRONMENT_PROFILE_REQUIRED", "RAW_PE_UNAVAILABLE"]
+          },
+          "environment_profile_id": null,
+          "compatibility_profile_id": null,
+          "component_proofs": null,
+          "reason_codes": [
+            "COMPILER_UNAVAILABLE", "GAME_BINARIES_UNAVAILABLE", "INDEX_MCP_UNAVAILABLE",
+            "KCSE_UNAVAILABLE", "NATIVE_WORKFLOW_BLOCKED", "PYGHIDRA_UNAVAILABLE_OPTIONAL",
+            "RAW_PE_UNAVAILABLE", "REGULAR_GHIDRA_UNAVAILABLE", "X64DBG_UNAVAILABLE"
+          ]
+        }
+      },
+      "approval_class": "none",
+      "library_binding": {
+        "module_or_symbol": "kcd2_toolchain_core.capability_preflight:detect_capabilities",
+        "source_sha256": "D31E08B814ABEBC070F90C00B3B5EDE8ECD0AF0A30A8A6851F559CCBECE9B443"
+      },
+      "output_bounds": {"max_response_bytes": 65536, "artifact_spill": false},
+      "smoke_test": {
+        "invoked_through_public_surface": true,
+        "status": "passed",
+        "receipt_id": "api-003:smoke:native-capability-preflight"
+      },
+      "not_exposed_reason": null
+    },
+    {
+      "tool_name": "entry_lock_preflight",
+      "operation_class": "read_only_analysis",
+      "exposure_status": "REGISTERED",
+      "callable_via": "mcp_plugin",
+      "registered": true,
+      "input_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["manifest_path", "module_path", "generated_header_path"],
+        "properties": {
+          "manifest_path": {"type": "string", "minLength": 1, "maxLength": 2048},
+          "module_path": {"type": "string", "minLength": 1, "maxLength": 2048},
+          "generated_header_path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          }
+        }
+      },
+      "output_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema_version", "status", "valid", "lock_source", "module_name",
+          "module_sha256", "generated_header_sha256",
+          "generated_header_matches_manifest", "hooks", "diagnostics"
+        ],
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "kcd2.entry-lock-preflight-tool.v1"
+          },
+          "status": {"type": "string", "enum": ["PASS", "FAIL"]},
+          "valid": {"type": "boolean"},
+          "lock_source": {"type": "string", "const": "raw_pe_rva_mapping"},
+          "module_name": {"type": ["string", "null"], "maxLength": 256},
+          "module_sha256": {
+            "type": ["string", "null"],
+            "maxLength": 64,
+            "pattern": "^[A-Fa-f0-9]{64}$"
+          },
+          "generated_header_sha256": {
+            "type": ["string", "null"],
+            "maxLength": 64,
+            "pattern": "^[A-Fa-f0-9]{64}$"
+          },
+          "generated_header_matches_manifest": {"type": "boolean"},
+          "hooks": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "hook_id", "rva", "file_offset", "raw_bytes_hex", "matches",
+                "hidden_prefix_hex", "redundant_prefix_hex"
+              ],
+              "properties": {
+                "hook_id": {"type": "string", "minLength": 1, "maxLength": 128},
+                "rva": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+                "file_offset": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1099511627776
+                },
+                "raw_bytes_hex": {"type": "string", "maxLength": 1024},
+                "matches": {"type": "boolean"},
+                "hidden_prefix_hex": {"type": "string", "maxLength": 64},
+                "redundant_prefix_hex": {"type": "string", "maxLength": 64}
+              }
+            }
+          },
+          "diagnostics": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["code", "message"],
+              "properties": {
+                "code": {"type": "string", "minLength": 1, "maxLength": 128},
+                "message": {"type": "string", "minLength": 1, "maxLength": 2000}
+              }
+            }
+          }
+        }
+      },
+      "example": {
+        "input": {
+          "manifest_path": "tests/fixtures/native_probes/api-003-missing-manifest.json",
+          "module_path": "tests/fixtures/native_probes/api-003-missing-module.dll",
+          "generated_header_path": "tests/fixtures/native_probes/api-003-missing-header.hpp"
+        },
+        "output": {
+          "schema_version": "kcd2.entry-lock-preflight-tool.v1",
+          "status": "FAIL",
+          "valid": false,
+          "lock_source": "raw_pe_rva_mapping",
+          "module_name": null,
+          "module_sha256": null,
+          "generated_header_sha256": null,
+          "generated_header_matches_manifest": false,
+          "hooks": [],
+          "diagnostics": [
+            {
+              "code": "ENTRY_LOCK_PREFLIGHT_REFUSED",
+              "message": "Input unavailable, unbounded, or inconsistent with the raw-PE lock."
+            }
+          ]
+        }
+      },
+      "approval_class": "none",
+      "library_binding": {
+        "module_or_symbol": "kcd2_native_probes.guarded_kcse:entry_lock_preflight",
+        "source_sha256": "8BC5C4AF48BC80D9922244A9493BE2CC1E7F01121DCEDD8AABFCBC4C82E442B5"
+      },
+      "output_bounds": {"max_response_bytes": 65536, "artifact_spill": false},
+      "smoke_test": {
+        "invoked_through_public_surface": true,
+        "status": "passed",
+        "receipt_id": "api-003:smoke:entry-lock-preflight"
+      },
+      "not_exposed_reason": null
+    },
+    {
+      "tool_name": "record_layout_lint",
+      "operation_class": "read_only_analysis",
+      "exposure_status": "REGISTERED",
+      "callable_via": "mcp_plugin",
+      "registered": true,
+      "input_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["input_path"],
+        "properties": {
+          "input_path": {"type": "string", "minLength": 1, "maxLength": 2048},
+          "max_diagnostics": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000,
+            "default": 256
+          }
+        }
+      },
+      "output_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schema_version", "status", "diagnostics", "diagnostics_truncated"],
+        "properties": {
+          "schema_version": {"type": "string", "const": "kcd2.record-layout-lint.v1"},
+          "status": {"type": "string", "enum": ["PASS", "FAIL"]},
+          "diagnostics": {
+            "type": "array",
+            "maxItems": 10000,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["code", "path", "message"],
+              "properties": {
+                "code": {"type": "string", "minLength": 1, "maxLength": 128},
+                "path": {"type": "string", "minLength": 1, "maxLength": 2048},
+                "message": {"type": "string", "minLength": 1, "maxLength": 2000}
+              }
+            }
+          },
+          "diagnostics_truncated": {"type": "boolean"}
+        }
+      },
+      "example": {
+        "input": {"input_path": "examples/record-layout-evidence.example.json"},
+        "output": {
+          "schema_version": "kcd2.record-layout-lint.v1",
+          "status": "PASS",
+          "diagnostics": [],
+          "diagnostics_truncated": false
+        }
+      },
+      "approval_class": "none",
+      "library_binding": {
+        "module_or_symbol": "kcd2_native_probes.record_layout:record_layout_lint",
+        "source_sha256": "1BA1F7E7C8BC120DE41A8006095C6B2EFF2AB7FF3B868C24F21E34DCB07AD525"
+      },
+      "output_bounds": {"max_response_bytes": 1048576, "artifact_spill": false},
+      "smoke_test": {
+        "invoked_through_public_surface": true,
+        "status": "passed",
+        "receipt_id": "api-003:smoke:record-layout-lint"
+      },
+      "not_exposed_reason": null
+    },
+    {
+      "tool_name": "probe_playtest_readiness",
+      "operation_class": "read_only_analysis",
+      "exposure_status": "REGISTERED",
+      "callable_via": "mcp_plugin",
+      "registered": true,
+      "input_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["input_path"],
+        "properties": {
+          "input_path": {"type": "string", "minLength": 1, "maxLength": 2048}
+        }
+      },
+      "output_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema_version", "request_id", "input_sha256", "receipt_id", "probe_id",
+          "session_id", "module_sha256", "status", "gameplay_handoff_allowed", "checks",
+          "failure_reasons", "next_action", "bounded_x64dbg_proof_required"
+        ],
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "kcd2.probe-playtest-readiness-tool.v1"
+          },
+          "request_id": {"type": "string", "minLength": 1, "maxLength": 256},
+          "input_sha256": {
+            "type": "string",
+            "maxLength": 64,
+            "pattern": "^[A-Fa-f0-9]{64}$"
+          },
+          "receipt_id": {"type": "string", "minLength": 1, "maxLength": 256},
+          "probe_id": {"type": ["string", "null"], "maxLength": 256},
+          "session_id": {"type": ["string", "null"], "maxLength": 256},
+          "module_sha256": {
+            "type": ["string", "null"],
+            "maxLength": 64,
+            "pattern": "^[A-Fa-f0-9]{64}$"
+          },
+          "status": {"type": "string", "enum": ["READY", "BLOCKED"]},
+          "gameplay_handoff_allowed": {"type": "boolean"},
+          "checks": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "module_profile", "record_layout", "entry_lock", "prototype_trampoline",
+              "caller_owner_correlation", "source_manifest_compiled", "controls",
+              "negative_validity_policy", "event_bounds", "boot_install_ok",
+              "responsiveness", "debugger_state", "deployment_identity"
+            ],
+            "properties": {
+              "module_profile": {"type": "boolean"},
+              "record_layout": {"type": "boolean"},
+              "entry_lock": {"type": "boolean"},
+              "prototype_trampoline": {"type": "boolean"},
+              "caller_owner_correlation": {"type": "boolean"},
+              "source_manifest_compiled": {"type": "boolean"},
+              "controls": {"type": "boolean"},
+              "negative_validity_policy": {"type": "boolean"},
+              "event_bounds": {"type": "boolean"},
+              "boot_install_ok": {"type": "boolean"},
+              "responsiveness": {"type": "boolean"},
+              "debugger_state": {"type": "boolean"},
+              "deployment_identity": {"type": "boolean"}
+            }
+          },
+          "failure_reasons": {
+            "type": "array",
+            "maxItems": 17,
+            "items": {"type": "string", "minLength": 1, "maxLength": 128}
+          },
+          "next_action": {
+            "type": "string",
+            "enum": ["user_gameplay", "bounded_x64dbg_proof", "repair_preflight"]
+          },
+          "bounded_x64dbg_proof_required": {"type": "boolean"}
+        }
+      },
+      "example": {
+        "input": {
+          "input_path": "tests/fixtures/native_probes/readiness-api-003-blocked.json"
+        },
+        "output": {
+          "schema_version": "kcd2.probe-playtest-readiness-tool.v1",
+          "request_id": "readiness:api-003-smoke",
+          "input_sha256": "f9b7ee50864b42604fd23a588302857f1bc0e35decfda09acdeeda8d3fb44ad3",
+          "receipt_id": "readiness:sha256:b07709cb0100738f6ae07744273ea3276284dae55d3dc9632a5d1932f169a1bc",
+          "probe_id": null,
+          "session_id": null,
+          "module_sha256": null,
+          "status": "BLOCKED",
+          "gameplay_handoff_allowed": false,
+          "checks": {
+            "module_profile": false,
+            "record_layout": false,
+            "entry_lock": false,
+            "prototype_trampoline": false,
+            "caller_owner_correlation": false,
+            "source_manifest_compiled": false,
+            "controls": false,
+            "negative_validity_policy": false,
+            "event_bounds": false,
+            "boot_install_ok": false,
+            "responsiveness": false,
+            "debugger_state": false,
+            "deployment_identity": false
+          },
+          "failure_reasons": [
+            "BOOT_NOT_CONFIRMED", "CALLER_OWNER_CORRELATION_UNRESOLVED",
+            "CONTROLS_INSUFFICIENT", "DEBUGGER_HANDOFF_UNSAFE",
+            "DEPLOYMENT_IDENTITY_INVALID", "ENTRY_LOCK_INVALID", "EVENT_BOUNDS_INVALID",
+            "INSTALL_OK_INVALID", "MANIFEST_INVALID", "MODULE_PROFILE_MISMATCH",
+            "NEGATIVE_VALIDITY_POLICY_INCOMPLETE", "PROCESS_UNRESPONSIVE",
+            "PROTOTYPE_ABI_UNRESOLVED", "RECORD_LAYOUT_INVALID",
+            "SOURCE_MANIFEST_COMPILED_MISMATCH", "STOLEN_INSTRUCTIONS_UNSAFE",
+            "TRAMPOLINE_UNSAFE"
+          ],
+          "next_action": "repair_preflight",
+          "bounded_x64dbg_proof_required": false
+        }
+      },
+      "approval_class": "none",
+      "library_binding": {
+        "module_or_symbol": "kcd2_native_probes.playtest_readiness:probe_playtest_readiness",
+        "source_sha256": "A31BD2BB31A18396EE5567BBD4D6EFC2848C15EBF4D45734A18B5E54BFC2D9A7"
+      },
+      "output_bounds": {"max_response_bytes": 65536, "artifact_spill": false},
+      "smoke_test": {
+        "invoked_through_public_surface": true,
+        "status": "passed",
+        "receipt_id": "api-003:smoke:probe-playtest-readiness"
+      },
+      "not_exposed_reason": null
+    },
+    {
+      "tool_name": "validate_probe_result",
+      "operation_class": "read_only_analysis",
+      "exposure_status": "REGISTERED",
+      "callable_via": "mcp_plugin",
+      "registered": true,
+      "input_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["input_path"],
+        "properties": {
+          "input_path": {"type": "string", "minLength": 1, "maxLength": 2048}
+        }
+      },
+      "output_schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema_version", "probe_id", "session_id", "checks",
+          "event_family_saturation", "verdict", "reasons", "permitted_runtime_claims"
+        ],
+        "properties": {
+          "schema_version": {"type": "string", "const": "kcd2.probe-result-validity.v1"},
+          "probe_id": {"type": "string", "minLength": 1, "maxLength": 256},
+          "session_id": {"type": "string", "minLength": 1, "maxLength": 256},
+          "checks": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "boot_ok", "install_ok", "game_fingerprint_match",
+              "deployment_binding_exact", "module_base_emitted",
+              "unfiltered_queries_observed", "record_layout_valid",
+              "identity_filter_valid", "positive_control_or_population", "log_complete",
+              "no_dropped_events", "user_state_confirmed", "correlation_contract_valid"
+            ],
+            "properties": {
+              "boot_ok": {"type": "boolean"},
+              "install_ok": {"type": "boolean"},
+              "game_fingerprint_match": {"type": "boolean"},
+              "deployment_binding_exact": {"type": "boolean"},
+              "module_base_emitted": {"type": "boolean"},
+              "unfiltered_queries_observed": {"type": "boolean"},
+              "record_layout_valid": {"type": "boolean"},
+              "identity_filter_valid": {"type": "boolean"},
+              "positive_control_or_population": {"type": "boolean"},
+              "log_complete": {"type": "boolean"},
+              "no_dropped_events": {"type": "boolean"},
+              "user_state_confirmed": {"type": "boolean"},
+              "correlation_contract_valid": {"type": "boolean"}
+            }
+          },
+          "event_family_saturation": {
+            "type": "object",
+            "maxProperties": 128,
+            "propertyNames": {"type": "string", "maxLength": 128},
+            "properties": {},
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["observed", "limit", "reached"],
+              "properties": {
+                "observed": {"type": "integer", "minimum": 0, "maximum": 100000},
+                "limit": {"type": "integer", "minimum": 1, "maximum": 100000},
+                "reached": {"type": "boolean"}
+              }
+            }
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "positive_observation", "confirmed_negative_in_covered_scope",
+              "capture_inconclusive", "not_evaluated"
+            ]
+          },
+          "reasons": {
+            "type": "array",
+            "maxItems": 256,
+            "items": {"type": "string", "minLength": 1, "maxLength": 2000}
+          },
+          "permitted_runtime_claims": {
+            "type": "array",
+            "maxItems": 256,
+            "items": {"type": "string", "minLength": 1, "maxLength": 128}
+          },
+          "audit_evidence_refs": {
+            "type": "array",
+            "maxItems": 512,
+            "items": {"type": "string", "minLength": 1, "maxLength": 512}
+          }
+        }
+      },
+      "example": {
+        "input": {
+          "input_path": "tests/fixtures/native_probes/negative-capture.invalid-filter.json"
+        },
+        "output": {
+          "schema_version": "kcd2.probe-result-validity.v1",
+          "probe_id": "fixture-negative-capture",
+          "session_id": "fixture-session-invalid-filter",
+          "checks": {
+            "boot_ok": true,
+            "install_ok": true,
+            "game_fingerprint_match": true,
+            "deployment_binding_exact": true,
+            "module_base_emitted": true,
+            "unfiltered_queries_observed": true,
+            "record_layout_valid": true,
+            "identity_filter_valid": false,
+            "positive_control_or_population": true,
+            "log_complete": true,
+            "no_dropped_events": true,
+            "user_state_confirmed": true,
+            "correlation_contract_valid": true
+          },
+          "event_family_saturation": {
+            "CANDIDATE": {"observed": 0, "limit": 256, "reached": false},
+            "QUERY": {"observed": 4, "limit": 64, "reached": false}
+          },
+          "verdict": "capture_inconclusive",
+          "reasons": ["check_failed:identity_filter_valid"],
+          "permitted_runtime_claims": ["query_observed"],
+          "audit_evidence_refs": [
+            "fixture:boot-install-identity", "fixture:complete-runtime-jsonl",
+            "fixture:invalid-filter-proof"
+          ]
+        }
+      },
+      "approval_class": "none",
+      "library_binding": {
+        "module_or_symbol": "kcd2_native_probes.result_validity:validate_probe_result",
+        "source_sha256": "76FF8D10B218BF8F814D83BF8C02E4AE687486280171E196CA923238275EBC6E"
+      },
+      "output_bounds": {"max_response_bytes": 1048576, "artifact_spill": false},
+      "smoke_test": {
+        "invoked_through_public_surface": true,
+        "status": "passed",
+        "receipt_id": "api-003:smoke:validate-probe-result"
+      },
+      "not_exposed_reason": null
+    }
+  ]
+}

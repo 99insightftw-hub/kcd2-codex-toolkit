@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/configuration-audit-v1.schema.json",
+  "title": "KCD2 configuration audit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "snapshot_id",
+    "sources",
+    "effective_assignments",
+    "variant_groups",
+    "verdict"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.configuration-audit.v1"
+    },
+    "snapshot_id": {
+      "type": "string"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "kind",
+          "provider_id"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "MOD_CFG",
+              "PAK_CFG",
+              "DEFAULT_PROFILE",
+              "ACTION_MAP",
+              "SUPERACTION",
+              "OTHER"
+            ]
+          },
+          "provider_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "effective_assignments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "contributors",
+          "application",
+          "verdict"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "contributors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "application": {
+            "enum": [
+              "STARTUP",
+              "RUNTIME",
+              "ORDERED_MERGE",
+              "PARALLEL_REGISTRATION",
+              "UNKNOWN"
+            ]
+          },
+          "effective_value": {},
+          "verdict": {
+            "enum": [
+              "VALID",
+              "CONFLICT",
+              "UNRESOLVED"
+            ]
+          }
+        }
+      }
+    },
+    "variant_groups": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "verdict": {
+      "enum": [
+        "VALID",
+        "INVALID",
+        "INCONCLUSIVE"
+      ]
+    }
+  }
+}

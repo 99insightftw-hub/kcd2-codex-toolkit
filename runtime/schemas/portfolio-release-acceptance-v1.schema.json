@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/portfolio-release-acceptance-v1.schema.json",
+  "title": "KCD2 portfolio release acceptance",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "release_id",
+    "task_state",
+    "non_live",
+    "live_read_only",
+    "compatibility_stacks",
+    "identity_consistent",
+    "rollback_dry_run",
+    "mutation_count",
+    "gate"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.portfolio-release-acceptance.v1"
+    },
+    "release_id": {
+      "type": "string"
+    },
+    "task_state": {
+      "enum": [
+        "IMPLEMENTED",
+        "NON_LIVE_TESTED",
+        "LIVE_READ_ONLY_ACCEPTED",
+        "LIVE_MUTATION_ACCEPTED",
+        "ACCEPTED_EXTERNAL_RISK",
+        "ACTUALLY_RESOLVED",
+        "REGRESSED",
+        "BLOCKED_SOURCE",
+        "BLOCKED_ENVIRONMENT"
+      ]
+    },
+    "non_live": {
+      "enum": [
+        "PASS",
+        "FAIL",
+        "NOT_RUN"
+      ]
+    },
+    "live_read_only": {
+      "enum": [
+        "PASS",
+        "FAIL",
+        "NOT_AUTHORIZED",
+        "NOT_RUN"
+      ]
+    },
+    "compatibility_stacks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "identity_consistent": {
+      "type": "boolean"
+    },
+    "rollback_dry_run": {
+      "enum": [
+        "PASS",
+        "FAIL",
+        "NOT_RUN"
+      ]
+    },
+    "source_blockers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "mutation_count": {
+      "const": 0
+    },
+    "gate": {
+      "enum": [
+        "STAGE_ALLOWED",
+        "STAGE_BLOCKED"
+      ]
+    }
+  }
+}

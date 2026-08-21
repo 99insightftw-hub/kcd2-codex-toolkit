@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/x64dbg-checkpoint-v1.schema.json",
+  "title": "KCD2 bounded x64dbg checkpoint v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "artifact_id", "session_id", "cross_tool_identity_id",
+    "module_name", "module_sha256", "checkpoint_rva", "bytes", "bytes_hex",
+    "registers", "maximum_bytes"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.x64dbg-checkpoint.v1"},
+    "artifact_id": {"type": "string", "pattern": "^x64dbg-checkpoint:[0-9a-f]{64}$"},
+    "session_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "cross_tool_identity_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "module_name": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,128}$"},
+    "module_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "checkpoint_rva": {"type": "string", "pattern": "^0x[0-9A-F]{1,16}$"},
+    "bytes": {"type": "integer", "minimum": 1, "maximum": 4096},
+    "bytes_hex": {"type": "string", "pattern": "^(?:[0-9a-f]{2}){1,4096}$"},
+    "registers": {
+      "type": "object",
+      "maxProperties": 64,
+      "propertyNames": {"pattern": "^[A-Za-z][A-Za-z0-9_]{0,15}$"},
+      "additionalProperties": {"type": "string", "pattern": "^0x[0-9A-F]{1,16}$"}
+    },
+    "maximum_bytes": {"type": "integer", "minimum": 1, "maximum": 4096}
+  }
+}

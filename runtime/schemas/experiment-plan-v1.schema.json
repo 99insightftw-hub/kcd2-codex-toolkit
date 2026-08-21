@@ -1,0 +1,220 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/experiment-plan-v1.schema.json",
+  "title": "Domain-neutral experiment plan v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "experiment_id",
+    "investigation_id",
+    "hypothesis_ids",
+    "evidence_refs",
+    "required_channels",
+    "controls",
+    "bounds",
+    "possible_outcomes",
+    "expected_information_gain",
+    "cost",
+    "user_burden",
+    "safety_risk",
+    "stop_conditions",
+    "cleanup_requirements",
+    "decision"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.experiment-plan.v1"},
+    "experiment_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "investigation_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "hypothesis_ids": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    },
+    "evidence_refs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 512,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    },
+    "required_channels": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    },
+    "controls": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {"$ref": "#/$defs/control"}
+    },
+    "bounds": {"$ref": "#/$defs/bounds"},
+    "possible_outcomes": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 64,
+      "items": {"$ref": "#/$defs/outcome"},
+      "contains": {
+        "type": "object",
+        "properties": {
+          "hypothesis_updates": {
+            "type": "array",
+            "contains": {
+              "type": "object",
+              "properties": {"state": {"const": "INCONCLUSIVE"}},
+              "required": ["state"]
+            }
+          }
+        },
+        "required": ["hypothesis_updates"]
+      }
+    },
+    "expected_information_gain": {"$ref": "#/$defs/information_gain"},
+    "cost": {"$ref": "#/$defs/cost"},
+    "user_burden": {"$ref": "#/$defs/ordinal"},
+    "safety_risk": {"enum": ["NONE", "LOW", "MEDIUM", "HIGH"]},
+    "stop_conditions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {"$ref": "#/$defs/stop_condition"}
+    },
+    "cleanup_requirements": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {"type": "string", "minLength": 1, "maxLength": 512}
+    },
+    "decision": {
+      "enum": [
+        "ELIGIBLE",
+        "TEST_UNINFORMATIVE",
+        "BLOCKED_CAPABILITY",
+        "BLOCKED_IDENTITY",
+        "BLOCKED_SAFETY"
+      ]
+    },
+    "blockers": {
+      "type": "array",
+      "maxItems": 128,
+      "items": {"type": "string", "minLength": 1, "maxLength": 512}
+    }
+  },
+  "$defs": {
+    "ordinal": {"enum": ["LOW", "MEDIUM", "HIGH"]},
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lower", "upper"],
+      "properties": {
+        "lower": {"type": "number", "minimum": 0, "maximum": 1},
+        "upper": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["control_id", "description", "required"],
+      "properties": {
+        "control_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "description": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "required": {"type": "boolean"}
+      }
+    },
+    "bounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maximum_attempts", "maximum_duration_seconds", "maximum_events"],
+      "properties": {
+        "maximum_attempts": {"type": "integer", "minimum": 1, "maximum": 100},
+        "maximum_duration_seconds": {"type": "integer", "minimum": 1, "maximum": 86400},
+        "maximum_events": {"type": "integer", "minimum": 1, "maximum": 1000000}
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "outcome_id",
+        "description",
+        "required_evidence_relations",
+        "hypothesis_updates"
+      ],
+      "properties": {
+        "outcome_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "description": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "required_evidence_relations": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {"enum": ["SUPPORTS", "CONTRADICTS", "CONTEXT"]}
+        },
+        "hypothesis_updates": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["hypothesis_id", "state", "confidence"],
+            "properties": {
+              "hypothesis_id": {"type": "string", "minLength": 1, "maxLength": 256},
+              "state": {
+                "enum": ["OPEN", "SUPPORTED", "CONTRADICTED", "INCONCLUSIVE", "SUPERSEDED"]
+              },
+              "confidence": {"$ref": "#/$defs/confidence"}
+            }
+          }
+        }
+      }
+    },
+    "information_gain": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "value"],
+          "properties": {
+            "mode": {"const": "QUALITATIVE"},
+            "value": {"enum": ["NONE", "LOW", "MEDIUM", "HIGH"]}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "value"],
+          "properties": {
+            "mode": {"const": "QUANTITATIVE"},
+            "value": {"type": "number", "minimum": 0, "maximum": 1}
+          }
+        }
+      ]
+    },
+    "cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["setup", "execution", "cleanup"],
+      "properties": {
+        "setup": {"$ref": "#/$defs/ordinal"},
+        "execution": {"$ref": "#/$defs/ordinal"},
+        "cleanup": {"$ref": "#/$defs/ordinal"}
+      }
+    },
+    "stop_condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["condition_id", "description", "mandatory"],
+      "properties": {
+        "condition_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "description": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "mandatory": {"type": "boolean"}
+      }
+    }
+  }
+}

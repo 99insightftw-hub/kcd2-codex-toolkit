@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/asset-runtime-receipt-v1.schema.json",
+  "title": "KCD2 passive visual and lighting runtime receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "session_id", "experiment_id", "active_snapshot_id", "adapter_id",
+    "status", "evidence_layer", "runtime_route", "event_count", "resources",
+    "missing_resources", "entities", "lights", "resolutions", "fallbacks",
+    "phase_transitions", "lod_transitions", "emitters", "safety_gate", "limits",
+    "reason_codes", "permitted_claims"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.asset-runtime-receipt.v1"},
+    "session_id": {"$ref": "#/$defs/text"},
+    "experiment_id": {"$ref": "#/$defs/text"},
+    "active_snapshot_id": {"$ref": "#/$defs/text"},
+    "adapter_id": {"$ref": "#/$defs/text"},
+    "status": {"enum": ["complete", "capture_inconclusive"]},
+    "evidence_layer": {"const": "runtime"},
+    "runtime_route": {"$ref": "#/$defs/route"},
+    "event_count": {"type": "integer", "minimum": 0, "maximum": 4096},
+    "resources": {"type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/resource"}},
+    "missing_resources": {"type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/missing"}},
+    "entities": {"type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/entity"}},
+    "lights": {"type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/light"}},
+    "resolutions": {"type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/resolution"}},
+    "fallbacks": {"type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/fallback"}},
+    "phase_transitions": {"type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/transition"}},
+    "lod_transitions": {"type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/transition"}},
+    "emitters": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "peak_active", "final_active"],
+      "properties": {
+        "status": {"enum": ["measured", "unresolved"]},
+        "peak_active": {"$ref": "#/$defs/nullable_count"},
+        "final_active": {"$ref": "#/$defs/nullable_count"}
+      }
+    },
+    "safety_gate": {
+      "type": "object", "additionalProperties": false,
+      "required": ["passive", "no_control_output"],
+      "properties": {"passive": {"const": true}, "no_control_output": {"const": true}}
+    },
+    "limits": {
+      "type": "object", "additionalProperties": false,
+      "required": ["maximum_events", "maximum_payload_bytes", "maximum_entities", "maximum_active_emitters"],
+      "properties": {
+        "maximum_events": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "maximum_payload_bytes": {"type": "integer", "minimum": 64, "maximum": 4096},
+        "maximum_entities": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "maximum_active_emitters": {"type": "integer", "minimum": 0, "maximum": 65536}
+      }
+    },
+    "reason_codes": {"type": "array", "maxItems": 5, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "permitted_claims": {"type": "array", "maxItems": 8, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "nullable_text": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/text"}]},
+    "nullable_count": {"type": ["integer", "null"], "minimum": 0, "maximum": 65536},
+    "route": {
+      "type": "object", "additionalProperties": false,
+      "required": ["route_id", "status", "reason"],
+      "properties": {"route_id": {"$ref": "#/$defs/text"}, "status": {"enum": ["supported", "unsupported"]}, "reason": {"$ref": "#/$defs/nullable_text"}}
+    },
+    "resource": {
+      "type": "object", "additionalProperties": false,
+      "required": ["resource_id", "kind", "canonical_path", "required", "fallback_resource_id", "resolution_status", "winner_provider_id"],
+      "properties": {
+        "resource_id": {"$ref": "#/$defs/text"}, "kind": {"enum": ["model", "material", "texture", "dds_stream", "particle", "effect", "archetype", "light", "emitter", "phase", "lod"]},
+        "canonical_path": {"$ref": "#/$defs/text"}, "required": {"type": "boolean"},
+        "fallback_resource_id": {"$ref": "#/$defs/nullable_text"}, "resolution_status": {"enum": ["exact_active_winner", "missing_with_fallback", "missing"]},
+        "winner_provider_id": {"$ref": "#/$defs/nullable_text"}
+      }
+    },
+    "missing": {
+      "type": "object", "additionalProperties": false,
+      "required": ["resource_id", "kind", "canonical_path", "fallback_resource_id", "fallback_observed"],
+      "properties": {"resource_id": {"$ref": "#/$defs/text"}, "kind": {"$ref": "#/$defs/text"}, "canonical_path": {"$ref": "#/$defs/text"}, "fallback_resource_id": {"$ref": "#/$defs/nullable_text"}, "fallback_observed": {"type": "boolean"}}
+    },
+    "entity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["entity_id", "archetype_resource_id", "selected_material_id", "selected_effect_id", "active_emitters"],
+      "properties": {"entity_id": {"$ref": "#/$defs/text"}, "archetype_resource_id": {"$ref": "#/$defs/text"}, "selected_material_id": {"$ref": "#/$defs/nullable_text"}, "selected_effect_id": {"$ref": "#/$defs/nullable_text"}, "active_emitters": {"$ref": "#/$defs/nullable_count"}}
+    },
+    "light": {
+      "type": "object", "additionalProperties": false,
+      "required": ["light_id", "entity_id", "light_resource_id", "intensity", "scale"],
+      "properties": {"light_id": {"$ref": "#/$defs/text"}, "entity_id": {"$ref": "#/$defs/text"}, "light_resource_id": {"$ref": "#/$defs/text"}, "intensity": {"type": "number", "minimum": 0, "maximum": 1000000}, "scale": {"type": "number", "minimum": 0, "maximum": 1000000}}
+    },
+    "resolution": {
+      "type": "object", "additionalProperties": false,
+      "required": ["entity_id", "resource_id", "canonical_path", "provider_id"],
+      "properties": {"entity_id": {"$ref": "#/$defs/text"}, "resource_id": {"$ref": "#/$defs/text"}, "canonical_path": {"$ref": "#/$defs/text"}, "provider_id": {"$ref": "#/$defs/text"}}
+    },
+    "fallback": {
+      "type": "object", "additionalProperties": false,
+      "required": ["entity_id", "from_resource_id", "to_resource_id", "reason"],
+      "properties": {"entity_id": {"$ref": "#/$defs/text"}, "from_resource_id": {"$ref": "#/$defs/text"}, "to_resource_id": {"$ref": "#/$defs/text"}, "reason": {"$ref": "#/$defs/text"}}
+    },
+    "transition": {
+      "type": "object", "additionalProperties": false,
+      "required": ["entity_id", "from_resource_id", "to_resource_id", "monotonic_ns"],
+      "properties": {"entity_id": {"$ref": "#/$defs/text"}, "from_resource_id": {"$ref": "#/$defs/nullable_text"}, "to_resource_id": {"$ref": "#/$defs/text"}, "monotonic_ns": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807}}
+    }
+  }
+}

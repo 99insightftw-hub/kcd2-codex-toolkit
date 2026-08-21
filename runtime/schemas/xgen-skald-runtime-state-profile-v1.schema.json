@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/xgen-skald-runtime-state-profile-v1.schema.json",
+  "title": "KCD2 XGEN/Skald runtime-state profile v1",
+  "description": "A manifest profile for bounded semantic runtime observations. Channel names and semantic slots are output vocabulary, not claims about native fields or ownership.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile_id",
+    "profile_revision",
+    "event_vocabulary_id",
+    "evidence_policy",
+    "channels",
+    "incident_values"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.xgen-skald-runtime-state-profile.v1"},
+    "profile_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]{0,127}$"},
+    "profile_revision": {"type": "string", "minLength": 1, "maxLength": 64},
+    "event_vocabulary_id": {"const": "kcd2.xgen-skald-runtime-events.v1"},
+    "evidence_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "static_is_runtime_proof",
+        "user_confirmation_is_causal_proof",
+        "unresolved_ownership_verdict",
+        "invalid_capture_verdict",
+        "module_relative_native_identity_required"
+      ],
+      "properties": {
+        "static_is_runtime_proof": {"const": false},
+        "user_confirmation_is_causal_proof": {"const": false},
+        "unresolved_ownership_verdict": {"const": "capture_inconclusive"},
+        "invalid_capture_verdict": {"const": "capture_inconclusive"},
+        "module_relative_native_identity_required": {"const": true}
+      }
+    },
+    "channels": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {"$ref": "#/$defs/channel"},
+      "allOf": [
+        {"contains": {"properties": {"domain": {"const": "active_behavior_template"}}}},
+        {"contains": {"properties": {"domain": {"const": "scheduler"}}}},
+        {"contains": {"properties": {"domain": {"const": "contexts"}}}},
+        {"contains": {"properties": {"domain": {"const": "entity_positions"}}}},
+        {"contains": {"properties": {"domain": {"const": "distance"}}}},
+        {"contains": {"properties": {"domain": {"const": "port_value"}}}},
+        {"contains": {"properties": {"domain": {"const": "sequence_selection"}}}}
+      ]
+    },
+    "incident_values": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fixture_only", "synthetic_only", "scenario_id", "values"],
+      "properties": {
+        "fixture_only": {"const": true},
+        "synthetic_only": {"type": "boolean"},
+        "scenario_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "values": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 64,
+          "propertyNames": {"$ref": "#/$defs/semantic_slot"},
+          "additionalProperties": {"$ref": "#/$defs/incident_value"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "domain": {
+      "enum": [
+        "active_behavior_template",
+        "scheduler",
+        "contexts",
+        "entity_positions",
+        "distance",
+        "port_value",
+        "sequence_selection"
+      ]
+    },
+    "event_name": {
+      "enum": [
+        "XGEN_BEHAVIOR_TEMPLATE_STATE",
+        "XGEN_SCHEDULER_STATE",
+        "XGEN_CONTEXT_STATE",
+        "XGEN_ENTITY_POSITIONS",
+        "XGEN_DISTANCE_STATE",
+        "XGEN_PORT_VALUE",
+        "SKALD_SEQUENCE_SELECTION"
+      ]
+    },
+    "semantic_slot": {
+      "enum": [
+        "active_behavior_token",
+        "active_template_token",
+        "scheduler_token",
+        "scheduler_state_token",
+        "context_tokens",
+        "subject_position",
+        "reference_position",
+        "coordinate_space_token",
+        "distance_value",
+        "distance_unit_token",
+        "distance_pair_token",
+        "port_token",
+        "value_type_token",
+        "value",
+        "sequence_token",
+        "selection_token",
+        "selection_ordinal"
+      ]
+    },
+    "channel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "channel_id",
+        "domain",
+        "event_name",
+        "semantic_slots",
+        "source_binding"
+      ],
+      "properties": {
+        "channel_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]{0,127}$"},
+        "domain": {"$ref": "#/$defs/domain"},
+        "event_name": {"$ref": "#/$defs/event_name"},
+        "semantic_slots": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/semantic_slot"}
+        },
+        "source_binding": {"$ref": "#/$defs/source_binding"}
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {"properties": {"domain": {"const": "active_behavior_template"}, "event_name": {"const": "XGEN_BEHAVIOR_TEMPLATE_STATE"}, "semantic_slots": {"const": ["active_behavior_token", "active_template_token"]}}},
+            {"properties": {"domain": {"const": "scheduler"}, "event_name": {"const": "XGEN_SCHEDULER_STATE"}, "semantic_slots": {"const": ["scheduler_token", "scheduler_state_token"]}}},
+            {"properties": {"domain": {"const": "contexts"}, "event_name": {"const": "XGEN_CONTEXT_STATE"}, "semantic_slots": {"const": ["context_tokens"]}}},
+            {"properties": {"domain": {"const": "entity_positions"}, "event_name": {"const": "XGEN_ENTITY_POSITIONS"}, "semantic_slots": {"const": ["subject_position", "reference_position", "coordinate_space_token"]}}},
+            {"properties": {"domain": {"const": "distance"}, "event_name": {"const": "XGEN_DISTANCE_STATE"}, "semantic_slots": {"const": ["distance_value", "distance_unit_token", "distance_pair_token"]}}},
+            {"properties": {"domain": {"const": "port_value"}, "event_name": {"const": "XGEN_PORT_VALUE"}, "semantic_slots": {"const": ["port_token", "value_type_token", "value"]}}},
+            {"properties": {"domain": {"const": "sequence_selection"}, "event_name": {"const": "SKALD_SEQUENCE_SELECTION"}, "semantic_slots": {"const": ["sequence_token", "selection_token", "selection_ordinal"]}}}
+          ]
+        }
+      ]
+    },
+    "source_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ownership_state",
+        "owner_identity",
+        "module_identity",
+        "hook_location",
+        "record_layout",
+        "evidence_refs"
+      ],
+      "properties": {
+        "ownership_state": {"enum": ["unresolved", "reviewed"]},
+        "owner_identity": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["kind", "value"],
+          "properties": {
+            "kind": {"enum": ["static_symbol", "xgen_owner", "skald_owner", "object_lifetime"]},
+            "value": {"type": "string", "minLength": 1, "maxLength": 256}
+          }
+        },
+        "module_identity": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["name", "sha256"],
+          "properties": {
+            "name": {"type": "string", "minLength": 1, "maxLength": 128},
+            "sha256": {"$ref": "#/$defs/sha256"}
+          }
+        },
+        "hook_location": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["module_sha256", "location_kind", "module_relative_value"],
+          "properties": {
+            "module_sha256": {"$ref": "#/$defs/sha256"},
+            "location_kind": {"enum": ["rva", "module_offset"]},
+            "module_relative_value": {"type": "string", "pattern": "^0x[A-Fa-f0-9]+$"}
+          }
+        },
+        "record_layout": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["record_family", "layout_profile_id"],
+          "properties": {
+            "record_family": {"type": "string", "minLength": 1, "maxLength": 256},
+            "layout_profile_id": {"type": "string", "minLength": 1, "maxLength": 256}
+          }
+        },
+        "evidence_refs": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 512}
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "ownership_state": {"const": "unresolved"},
+            "owner_identity": {"type": "null"},
+            "module_identity": {"type": "null"},
+            "hook_location": {"type": "null"},
+            "record_layout": {"type": "null"},
+            "evidence_refs": {"maxItems": 0}
+          }
+        },
+        {
+          "properties": {
+            "ownership_state": {"const": "reviewed"},
+            "owner_identity": {"type": "object"},
+            "module_identity": {"type": "object"},
+            "hook_location": {"type": "object"},
+            "record_layout": {"type": "object"},
+            "evidence_refs": {"minItems": 1}
+          }
+        }
+      ]
+    },
+    "incident_value": {
+      "oneOf": [
+        {"type": ["string", "number", "integer", "boolean", "null"]},
+        {
+          "type": "array",
+          "maxItems": 64,
+          "items": {"type": ["string", "number", "integer", "boolean", "null"]}
+        }
+      ]
+    },
+    "sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"}
+  }
+}

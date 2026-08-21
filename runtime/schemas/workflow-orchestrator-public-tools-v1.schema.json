@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/workflow-orchestrator-public-tools-v1.schema.json",
+  "title": "KCD2 workflow orchestrator public tool catalog v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "plugin_id", "tools"],
+  "properties": {
+    "schema_version": {"const": "kcd2.workflow-orchestrator-public-tools.v1"},
+    "plugin_id": {"const": "kcd2-workflow-orchestrator"},
+    "tools": {
+      "type": "array",
+      "minItems": 12,
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name", "delegates_only", "mutation_authority", "delegates_to",
+          "input_schema", "output_schema"
+        ],
+        "properties": {
+          "name": {
+            "enum": [
+              "doctor", "start_investigation", "prepare_test", "finish_test", "status",
+              "recommend_next_action", "inventory_projects", "analyze_active_stack",
+              "compare_variants", "prepare_candidate", "release_check", "rollback"
+            ]
+          },
+          "delegates_only": {"const": true},
+          "mutation_authority": {"const": false},
+          "delegates_to": {
+            "type": "array", "minItems": 1, "maxItems": 32, "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1, "maxLength": 256}
+          },
+          "input_schema": {"type": "object"},
+          "output_schema": {"type": "object"}
+        }
+      },
+      "allOf": [
+        {"contains": {"type": "object", "properties": {"name": {"const": "doctor"}}, "required": ["name"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"name": {"const": "start_investigation"}}, "required": ["name"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"name": {"const": "prepare_test"}}, "required": ["name"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"name": {"const": "finish_test"}}, "required": ["name"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"name": {"const": "status"}}, "required": ["name"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"name": {"const": "recommend_next_action"}}, "required": ["name"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"name": {"const": "inventory_projects"}}, "required": ["name"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"name": {"const": "analyze_active_stack"}}, "required": ["name"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"name": {"const": "compare_variants"}}, "required": ["name"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"name": {"const": "prepare_candidate"}}, "required": ["name"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"name": {"const": "release_check"}}, "required": ["name"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"type": "object", "properties": {"name": {"const": "rollback"}}, "required": ["name"]}, "minContains": 1, "maxContains": 1}
+      ]
+    }
+  }
+}

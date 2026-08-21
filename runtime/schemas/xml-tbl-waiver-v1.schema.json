@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/xml-tbl-waiver-v1.schema.json",
+  "title": "KCD2 exact-path XML/TBL waiver v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "waiver_id",
+    "game_build",
+    "whgame_sha256",
+    "internal_path",
+    "xml_sha256",
+    "approved_by_user",
+    "reason",
+    "evidence_refs"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.xml-tbl-waiver.v1"},
+    "waiver_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "game_build": {"type": "string", "minLength": 1, "maxLength": 128},
+    "whgame_sha256": {
+      "type": ["string", "null"],
+      "pattern": "^[A-Fa-f0-9]{64}$"
+    },
+    "internal_path": {"type": "string", "minLength": 1, "maxLength": 2048},
+    "xml_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+    "approved_by_user": {"const": true},
+    "reason": {"type": "string", "minLength": 1, "maxLength": 4000},
+    "evidence_refs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 512}
+    }
+  }
+}

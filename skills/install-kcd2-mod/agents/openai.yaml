@@ -1,0 +1,4 @@
+interface:
+  display_name: "Install KCD2 Mod"
+  short_description: "Install one separately approved candidate"
+  default_prompt: "Use $install-kcd2-mod to install this separately approved KCD2 candidate safely."

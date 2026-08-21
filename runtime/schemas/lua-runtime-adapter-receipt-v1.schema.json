@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/lua-runtime-adapter-receipt-v1.schema.json",
+  "title": "KCD2 Lua and entity lifecycle runtime adapter receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "session_id", "experiment_id", "input_sha256", "status",
+    "evidence_layer", "event_count", "event_counts", "events",
+    "instrumentation_channels", "instances", "listeners", "timers", "cleanup",
+    "cleanup_lint", "missing_event_types", "reason_codes", "permitted_claims", "limits"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.lua-runtime-adapter-receipt.v1"},
+    "session_id": {"$ref": "#/$defs/text"},
+    "experiment_id": {"$ref": "#/$defs/text"},
+    "input_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "status": {"enum": ["complete", "issues_found", "capture_inconclusive"]},
+    "evidence_layer": {"const": "runtime_observed"},
+    "event_count": {"type": "integer", "minimum": 1, "maximum": 4096},
+    "event_counts": {
+      "type": "object", "minProperties": 1, "maxProperties": 19,
+      "propertyNames": {"enum": [
+        "SCRIPT_LOAD", "ENTITY_INSTANCE", "INITIALIZE", "LISTENER_REGISTER",
+        "LISTENER_REMOVE", "CALLBACK", "RECEIVER_TYPE", "METHOD_AVAILABILITY",
+        "PROTECTED_CALL", "TIMER_START", "TIMER_FIRE", "TIMER_CANCEL",
+        "STATE_SAVE", "STATE_RESTORE", "ITEM_IDENTITY", "ENTITY_IDENTITY",
+        "CUSTOM", "CLEANUP"
+      ]},
+      "additionalProperties": {"type": "integer", "minimum": 1, "maximum": 4096}
+    },
+    "events": {"type": "array", "minItems": 1, "maxItems": 4096, "items": {"$ref": "#/$defs/event"}},
+    "instrumentation_channels": {"type": "array", "minItems": 1, "maxItems": 4096, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "instances": {"type": "array", "minItems": 1, "maxItems": 4096, "items": {"$ref": "#/$defs/instance"}},
+    "listeners": {"$ref": "#/$defs/listener_counts"},
+    "timers": {"type": "object", "additionalProperties": false, "required": ["active_count"], "properties": {"active_count": {"$ref": "#/$defs/count"}}},
+    "cleanup": {
+      "type": "object", "additionalProperties": false,
+      "required": ["complete_instance_count", "active_listener_count", "active_timer_count"],
+      "properties": {
+        "complete_instance_count": {"$ref": "#/$defs/count"},
+        "active_listener_count": {"$ref": "#/$defs/count"},
+        "active_timer_count": {"$ref": "#/$defs/count"}
+      }
+    },
+    "cleanup_lint": {"$ref": "#/$defs/lint"},
+    "missing_event_types": {"$ref": "#/$defs/text_array"},
+    "reason_codes": {"$ref": "#/$defs/text_array"},
+    "permitted_claims": {"$ref": "#/$defs/text_array"},
+    "limits": {
+      "type": "object", "additionalProperties": false,
+      "required": ["maximum_events", "maximum_payload_bytes", "adapter_maximum_events"],
+      "properties": {
+        "maximum_events": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "maximum_payload_bytes": {"type": "integer", "minimum": 64, "maximum": 4096},
+        "adapter_maximum_events": {"const": 4096}
+      }
+    }
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "nullable_text": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/text"}]},
+    "count": {"type": "integer", "minimum": 0, "maximum": 4096},
+    "text_array": {"type": "array", "maxItems": 64, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "event": {
+      "type": "object", "additionalProperties": false,
+      "required": ["event_type", "sequence", "monotonic_ns", "source_health", "script_id", "instance_id", "payload", "instrumentation_channel", "instrumentation"],
+      "properties": {
+        "event_type": {"$ref": "#/$defs/text"},
+        "sequence": {"type": "integer", "minimum": 0},
+        "monotonic_ns": {"type": "integer", "minimum": 0},
+        "source_health": {"enum": ["HEALTHY", "PARTIAL", "DROPPED_EVENTS", "TRUNCATED", "UNAVAILABLE"]},
+        "script_id": {"$ref": "#/$defs/text"},
+        "instance_id": {"$ref": "#/$defs/text"},
+        "payload": {"type": "object", "maxProperties": 3},
+        "instrumentation_channel": {"$ref": "#/$defs/text"},
+        "instrumentation": {"type": "object", "maxProperties": 128}
+      }
+    },
+    "instance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["script_id", "instance_id", "script_loaded", "entity_instanced", "initialization_count", "receiver_types", "available_methods", "unavailable_methods", "callback_count", "protected_call_count", "protected_call_failures", "saved_state_ids", "restored_state_ids", "item_ids", "entity_ids", "cleanup_state"],
+      "properties": {
+        "script_id": {"$ref": "#/$defs/text"}, "instance_id": {"$ref": "#/$defs/text"},
+        "script_loaded": {"type": "boolean"}, "entity_instanced": {"type": "boolean"},
+        "initialization_count": {"$ref": "#/$defs/count"}, "callback_count": {"$ref": "#/$defs/count"},
+        "protected_call_count": {"$ref": "#/$defs/count"}, "protected_call_failures": {"$ref": "#/$defs/count"},
+        "receiver_types": {"$ref": "#/$defs/text_array"}, "available_methods": {"$ref": "#/$defs/text_array"},
+        "unavailable_methods": {"$ref": "#/$defs/text_array"}, "saved_state_ids": {"$ref": "#/$defs/text_array"},
+        "restored_state_ids": {"$ref": "#/$defs/text_array"}, "item_ids": {"$ref": "#/$defs/text_array"},
+        "entity_ids": {"$ref": "#/$defs/text_array"}, "cleanup_state": {"$ref": "#/$defs/text"}
+      }
+    },
+    "listener_counts": {
+      "type": "object", "additionalProperties": false, "required": ["registered_count", "active_count"],
+      "properties": {"registered_count": {"$ref": "#/$defs/count"}, "active_count": {"$ref": "#/$defs/count"}}
+    },
+    "finding": {
+      "type": "object", "additionalProperties": false, "required": ["code", "severity", "instance_id", "resource_id"],
+      "properties": {"code": {"$ref": "#/$defs/text"}, "severity": {"const": "error"}, "instance_id": {"$ref": "#/$defs/text"}, "resource_id": {"$ref": "#/$defs/nullable_text"}}
+    },
+    "lint": {
+      "type": "object", "additionalProperties": false, "required": ["status", "finding_codes", "findings"],
+      "properties": {"status": {"enum": ["passed", "failed"]}, "finding_codes": {"$ref": "#/$defs/text_array"}, "findings": {"type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/finding"}}}
+    }
+  }
+}

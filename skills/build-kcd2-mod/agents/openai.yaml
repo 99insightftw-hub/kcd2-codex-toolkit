@@ -1,0 +1,4 @@
+interface:
+  display_name: "Build KCD2 Mod"
+  short_description: "Build an approved deterministic candidate"
+  default_prompt: "Use $build-kcd2-mod to build this approved KCD2 candidate in clean staging."

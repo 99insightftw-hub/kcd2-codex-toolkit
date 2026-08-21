@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/environment-drift-event-v1.schema.json",
+  "title": "KCD2 environment drift event v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "event_id", "profile_id", "detected_at", "subject_kind",
+    "subject_id", "drift_kind", "expected", "observed", "evidence_layer",
+    "eligibility_effect"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.environment-drift-event.v1"},
+    "event_id": {"type": "string", "pattern": "^drift:sha256:[0-9a-f]{64}$"},
+    "profile_id": {"type": "string", "minLength": 1, "maxLength": 2048},
+    "detected_at": {"type": "string", "format": "date-time", "maxLength": 64},
+    "subject_kind": {"enum": ["component", "repository", "plugin", "catalog"]},
+    "subject_id": {"type": "string", "minLength": 1, "maxLength": 2048},
+    "drift_kind": {
+      "enum": [
+        "path_missing", "identity_unavailable", "version_unavailable",
+        "sha256_changed", "version_changed", "commit_changed",
+        "catalog_fingerprint_changed"
+      ]
+    },
+    "expected": {"type": ["string", "null"], "maxLength": 2048},
+    "observed": {"type": ["string", "null"], "maxLength": 2048},
+    "evidence_layer": {"const": "static_read_only"},
+    "eligibility_effect": {"const": "none"}
+  }
+}

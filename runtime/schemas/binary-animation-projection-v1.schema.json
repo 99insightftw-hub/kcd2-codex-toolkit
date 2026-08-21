@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kcd2.local/schemas/binary-animation-projection-v1.schema.json",
+  "title": "KCD2 binary animation projection v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "projection_id", "source", "parser", "records"],
+  "properties": {
+    "schema_version": {"const": "kcd2.binary-animation-projection.v1"},
+    "projection_id": {"$ref": "#/$defs/text"},
+    "source": {"$ref": "#/$defs/source"},
+    "parser": {"$ref": "#/$defs/parser"},
+    "records": {"type": "array", "maxItems": 20000, "items": {"$ref": "#/$defs/record"}}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 8192, "pattern": "^[^\\u0000]+$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nullable_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["representation", "container_kind", "sha256", "byte_size", "exact_locator"],
+      "properties": {
+        "representation": {"enum": ["binary_payload", "textual_reference"]},
+        "container_kind": {"enum": ["caf", "dba"]},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "byte_size": {"type": "integer", "minimum": 0, "maximum": 1099511627776},
+        "exact_locator": {"$ref": "#/$defs/text"}
+      }
+    },
+    "parser": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parser_id", "parser_version", "coverage"],
+      "properties": {
+        "parser_id": {"type": ["string", "null"], "minLength": 1, "maxLength": 512},
+        "parser_version": {"type": ["string", "null"], "minLength": 1, "maxLength": 128},
+        "coverage": {"$ref": "#/$defs/parser_coverage"}
+      }
+    },
+    "parser_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["clips", "dba_ownership", "controllers", "root_transforms", "locator_transforms", "duration_timing", "animevents", "master_slave_pairing", "hashes"],
+      "properties": {
+        "clips": {"$ref": "#/$defs/support"},
+        "dba_ownership": {"$ref": "#/$defs/support"},
+        "controllers": {"$ref": "#/$defs/support"},
+        "root_transforms": {"$ref": "#/$defs/support"},
+        "locator_transforms": {"$ref": "#/$defs/support"},
+        "duration_timing": {"$ref": "#/$defs/support"},
+        "animevents": {"$ref": "#/$defs/support"},
+        "master_slave_pairing": {"$ref": "#/$defs/support"},
+        "hashes": {"$ref": "#/$defs/support"}
+      }
+    },
+    "support": {"enum": ["supported", "unsupported"]},
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["local_id", "clip_name", "exact_locator", "content_sha256", "dba_owner", "controllers", "transforms", "timing", "animevents", "pairing", "aliases", "provenance"],
+      "properties": {
+        "local_id": {"$ref": "#/$defs/text"},
+        "clip_name": {"$ref": "#/$defs/text"},
+        "exact_locator": {"$ref": "#/$defs/text"},
+        "content_sha256": {"$ref": "#/$defs/nullable_sha256"},
+        "dba_owner": {"type": ["string", "null"], "minLength": 1, "maxLength": 8192},
+        "controllers": {"type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/controller"}},
+        "transforms": {"$ref": "#/$defs/transforms"},
+        "timing": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/timing"}]},
+        "animevents": {"type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/animevent"}},
+        "pairing": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/pairing"}]},
+        "aliases": {"type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/alias"}},
+        "provenance": {"type": "array", "minItems": 1, "maxItems": 4096, "items": {"$ref": "#/$defs/provenance"}}
+      }
+    },
+    "controller": {
+      "type": "object", "additionalProperties": false,
+      "required": ["controller_id", "controller_hash", "exact_locator"],
+      "properties": {"controller_id": {"$ref": "#/$defs/text"}, "controller_hash": {"$ref": "#/$defs/nullable_sha256"}, "exact_locator": {"$ref": "#/$defs/text"}}
+    },
+    "transforms": {
+      "type": "object", "additionalProperties": false, "required": ["root", "locator"],
+      "properties": {"root": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/transform"}]}, "locator": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/transform"}]}}
+    },
+    "transform": {
+      "type": "object", "additionalProperties": false,
+      "required": ["translation", "rotation", "scale", "exact_locator"],
+      "properties": {
+        "translation": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "number"}},
+        "rotation": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "number"}},
+        "scale": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "number"}},
+        "exact_locator": {"$ref": "#/$defs/text"}
+      }
+    },
+    "timing": {
+      "type": "object", "additionalProperties": false,
+      "required": ["duration_seconds", "start_seconds", "end_seconds", "sample_rate_hz", "exact_locator"],
+      "properties": {
+        "duration_seconds": {"type": "number", "minimum": 0}, "start_seconds": {"type": "number", "minimum": 0},
+        "end_seconds": {"type": "number", "minimum": 0}, "sample_rate_hz": {"type": "number", "minimum": 0},
+        "exact_locator": {"$ref": "#/$defs/text"}
+      }
+    },
+    "animevent": {
+      "type": "object", "additionalProperties": false, "required": ["name", "time_seconds", "exact_locator"],
+      "properties": {"name": {"$ref": "#/$defs/text"}, "time_seconds": {"type": "number", "minimum": 0}, "exact_locator": {"$ref": "#/$defs/text"}}
+    },
+    "pairing": {
+      "type": "object", "additionalProperties": false, "required": ["role", "counterpart_local_id", "exact_locator"],
+      "properties": {"role": {"enum": ["master", "slave"]}, "counterpart_local_id": {"$ref": "#/$defs/text"}, "exact_locator": {"$ref": "#/$defs/text"}}
+    },
+    "alias": {
+      "type": "object", "additionalProperties": false, "required": ["value", "context", "exact_locator", "inference_kind"],
+      "properties": {"value": {"$ref": "#/$defs/text"}, "context": {"$ref": "#/$defs/text"}, "exact_locator": {"$ref": "#/$defs/text"}, "inference_kind": {"enum": ["exact_binary_parse", "declared_text_reference", "heuristic"]}}
+    },
+    "provenance": {
+      "type": "object", "additionalProperties": false, "required": ["fact", "evidence_kind", "exact_locator", "source_sha256"],
+      "properties": {"fact": {"$ref": "#/$defs/text"}, "evidence_kind": {"enum": ["exact_binary_parse", "declared_text_reference", "heuristic"]}, "exact_locator": {"$ref": "#/$defs/text"}, "source_sha256": {"$ref": "#/$defs/sha256"}}
+    }
+  }
+}

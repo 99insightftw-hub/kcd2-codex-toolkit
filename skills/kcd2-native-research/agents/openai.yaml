@@ -1,0 +1,4 @@
+interface:
+  display_name: "KCD2 Native Research"
+  short_description: "Evidence-driven KCD2 native analysis workflow"
+  default_prompt: "Use $kcd2-native-research to investigate this KCD2 native combat or animation problem safely."

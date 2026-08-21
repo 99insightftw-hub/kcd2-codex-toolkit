@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kcd2-toolchain.local/schemas/ui-visual-localization-stack-acceptance-v1.schema.json",
+  "title": "KCD2 UI, visual, and localization stack acceptance receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "acceptance_id", "stack_id", "active_snapshot_id",
+    "status", "evidence_layers", "gates", "ui", "visual", "localization",
+    "fallbacks", "component_receipts", "reason_codes"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.ui-visual-localization-stack-acceptance.v1"},
+    "acceptance_id": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "stack_id": {"type": "string", "minLength": 1},
+    "active_snapshot_id": {"type": "string", "minLength": 1},
+    "status": {"enum": ["PASS", "FAIL", "INCONCLUSIVE"]},
+    "evidence_layers": {
+      "type": "object", "additionalProperties": false,
+      "required": ["static", "runtime", "causal"],
+      "properties": {
+        "static": {"const": true}, "runtime": {"const": true},
+        "causal": {"const": false}
+      }
+    },
+    "gates": {
+      "type": "array", "minItems": 8, "maxItems": 8,
+      "items": {"$ref": "#/$defs/gate"}
+    },
+    "ui": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "session_id", "focus_status", "input_status", "aspect_status",
+        "active_listener_count"
+      ],
+      "properties": {
+        "session_id": {"type": "string", "minLength": 1},
+        "focus_status": {"enum": ["restored", "unresolved"]},
+        "input_status": {"enum": ["released", "unresolved"]},
+        "aspect_status": {"enum": ["applied", "unresolved"]},
+        "active_listener_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "visual": {
+      "type": "object", "additionalProperties": false,
+      "required": ["session_id", "status", "peak_active_emitters"],
+      "properties": {
+        "session_id": {"type": "string", "minLength": 1},
+        "status": {"enum": ["complete", "capture_inconclusive"]},
+        "peak_active_emitters": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "localization": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "release_id", "status", "isolated_mount_count",
+        "no_false_language_collisions"
+      ],
+      "properties": {
+        "release_id": {"type": "string", "minLength": 1},
+        "status": {"enum": ["accepted", "rejected", "capture_inconclusive"]},
+        "isolated_mount_count": {"type": "integer", "minimum": 0},
+        "no_false_language_collisions": {"type": "boolean"}
+      }
+    },
+    "fallbacks": {
+      "type": "object", "additionalProperties": false,
+      "required": ["declared_count", "explicit_count"],
+      "properties": {
+        "declared_count": {"type": "integer", "minimum": 0},
+        "explicit_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "component_receipts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ui_sha256", "visual_sha256", "localization_sha256"],
+      "properties": {
+        "ui_sha256": {"$ref": "#/$defs/sha256"},
+        "visual_sha256": {"$ref": "#/$defs/sha256"},
+        "localization_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "reason_codes": {
+      "type": "array", "maxItems": 32, "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 128}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "gate": {
+      "type": "object", "additionalProperties": false,
+      "required": ["gate_id", "status", "evidence_layer", "evidence_refs"],
+      "properties": {
+        "gate_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "status": {"enum": ["PASS", "FAIL", "INCONCLUSIVE"]},
+        "evidence_layer": {"enum": ["static", "runtime"]},
+        "evidence_refs": {
+          "type": "array", "minItems": 1, "maxItems": 64, "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 1024}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/runtime-deployment-binding-v1.schema.json",
+  "title": "KCD2 exact runtime deployment binding v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "binding_state", "deployment_id", "candidate_id", "active_snapshot_id", "active_snapshot_sha256", "target_mod", "target_pak", "target_manifest", "mod_order", "companion_components", "game", "verified_at_start", "verified_at_close"],
+  "properties": {
+    "schema_version": {"const": "kcd2.runtime-deployment-binding.v1"},
+    "binding_state": {"enum": ["EXACT", "DEPLOYMENT_UNBOUND_LEGACY"]},
+    "deployment_id": {"type": "string", "pattern": "^deploy:sha256:[A-Fa-f0-9]{64}$"},
+    "candidate_id": {"type": "string", "pattern": "^cand:sha256:[A-Fa-f0-9]{64}$"},
+    "active_snapshot_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "active_snapshot_sha256": {"$ref": "#/$defs/sha256"},
+    "snapshot_freshness": {"enum": ["fresh_exact", "partial", "stale", "unknown"]},
+    "target_mod": {
+      "type": "object", "additionalProperties": false, "required": ["mod_id", "folder_name_exact"],
+      "properties": {"mod_id": {"type": "string", "pattern": "^[a-z0-9_]+$"}, "folder_name_exact": {"type": "string", "minLength": 1, "maxLength": 260}}
+    },
+    "target_pak": {"$ref": "#/$defs/file_identity"},
+    "target_manifest": {"$ref": "#/$defs/file_identity"},
+    "mod_order": {"$ref": "#/$defs/file_identity"},
+    "companion_components": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/component_identity"}},
+    "game": {
+      "type": "object", "additionalProperties": false, "required": ["version", "executable", "whgame"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1, "maxLength": 128},
+        "executable": {"$ref": "#/$defs/pe_identity"},
+        "whgame": {"$ref": "#/$defs/pe_identity"}
+      }
+    },
+    "probe": {"oneOf": [{"$ref": "#/$defs/probe_identity"}, {"type": "null"}]},
+    "verified_at_start": {"type": "string", "format": "date-time"},
+    "verified_at_close": {"type": "string", "format": "date-time"},
+    "start_fingerprint_sha256": {"$ref": "#/$defs/sha256"},
+    "close_fingerprint_sha256": {"$ref": "#/$defs/sha256"},
+    "identity_unchanged": {"type": "boolean"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"binding_state": {"const": "EXACT"}},
+        "required": ["binding_state"]
+      },
+      "then": {
+        "required": ["snapshot_freshness", "start_fingerprint_sha256", "close_fingerprint_sha256", "identity_unchanged"],
+        "properties": {
+          "snapshot_freshness": {"const": "fresh_exact"},
+          "identity_unchanged": {"const": true}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+    "file_identity": {
+      "type": "object", "additionalProperties": false, "required": ["path", "sha256", "bytes"],
+      "properties": {"path": {"type": "string", "minLength": 1, "maxLength": 2048}, "sha256": {"$ref": "#/$defs/sha256"}, "bytes": {"type": "integer", "minimum": 0}}
+    },
+    "component_identity": {
+      "type": "object", "additionalProperties": false, "required": ["role", "path", "sha256"],
+      "properties": {"role": {"type": "string", "minLength": 1, "maxLength": 128}, "path": {"type": "string", "minLength": 1, "maxLength": 2048}, "sha256": {"$ref": "#/$defs/sha256"}}
+    },
+    "pe_identity": {
+      "type": "object", "additionalProperties": false, "required": ["name", "sha256", "timestamp", "image_size"],
+      "properties": {"name": {"type": "string", "minLength": 1, "maxLength": 260}, "sha256": {"$ref": "#/$defs/sha256"}, "timestamp": {"type": "string", "pattern": "^0x[A-Fa-f0-9]+$"}, "image_size": {"type": "integer", "minimum": 1}}
+    },
+    "probe_identity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["probe_id", "revision", "dll_sha256", "source_sha256", "contract_sha256"],
+      "properties": {
+        "probe_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "revision": {"type": "string", "minLength": 1, "maxLength": 128},
+        "dll_sha256": {"$ref": "#/$defs/sha256"},
+        "source_sha256": {"$ref": "#/$defs/sha256"},
+        "contract_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

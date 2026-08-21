@@ -1,0 +1,606 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/candidate-lifecycle-v1.schema.json",
+  "title": "KCD2 immutable candidate lifecycle v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "candidate_id",
+    "identity",
+    "aliases",
+    "lineage",
+    "events",
+    "derived_state"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.candidate-lifecycle.v1"
+    },
+    "candidate_id": {
+      "type": "string",
+      "pattern": "^cand:sha256:[A-Fa-f0-9]{64}$"
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mod_id",
+        "folder_name_exact",
+        "manifest_sha256",
+        "artifacts",
+        "parent_artifact_sha256",
+        "change_ledger_sha256",
+        "source_tree_sha256",
+        "build_recipe_sha256",
+        "toolchain",
+        "created_at"
+      ],
+      "properties": {
+        "mod_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$",
+          "maxLength": 200
+        },
+        "folder_name_exact": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 260
+        },
+        "manifest_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 128,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "role",
+              "logical_path",
+              "sha256",
+              "bytes"
+            ],
+            "properties": {
+              "role": {
+                "enum": [
+                  "data_pak",
+                  "localization_pak",
+                  "manifest",
+                  "config",
+                  "native_component",
+                  "other"
+                ]
+              },
+              "logical_path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2048
+              },
+              "sha256": {
+                "$ref": "#/$defs/sha256"
+              },
+              "bytes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "required_at_runtime": {
+                "type": "boolean",
+                "default": true
+              }
+            }
+          }
+        },
+        "parent_candidate_id": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^cand:sha256:[A-Fa-f0-9]{64}$"
+            }
+          ]
+        },
+        "parent_artifact_sha256": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/sha256"
+            }
+          ]
+        },
+        "change_ledger_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "source_revision": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256
+        },
+        "source_tree_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "build_recipe_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "toolchain": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "version",
+            "lock_sha256"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "lock_sha256": {
+              "$ref": "#/$defs/sha256"
+            }
+          }
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "aliases": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "label",
+          "alias_type"
+        ],
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "alias_type": {
+            "enum": [
+              "human_candidate_label",
+              "version",
+              "release_name",
+              "historical_report_label"
+            ]
+          },
+          "variant_key": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 256
+          }
+        }
+      }
+    },
+    "lineage": {
+      "type": "array",
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "edge_type",
+          "other_candidate_id",
+          "evidence_refs"
+        ],
+        "properties": {
+          "edge_type": {
+            "enum": [
+              "derived_from",
+              "rebuilt_from",
+              "variant_of",
+              "supersedes",
+              "rollback_of"
+            ]
+          },
+          "other_candidate_id": {
+            "type": "string",
+            "pattern": "^cand:sha256:[A-Fa-f0-9]{64}$"
+          },
+          "evidence_refs": {
+            "$ref": "#/$defs/evidence_refs"
+          }
+        }
+      }
+    },
+    "events": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10000,
+      "items": {
+        "$ref": "#/$defs/lifecycle_event"
+      }
+    },
+    "derived_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "build",
+        "package",
+        "installation",
+        "runtime_validation_requirement",
+        "runtime",
+        "causal",
+        "disposition",
+        "computed_from_event_ids",
+        "computed_at"
+      ],
+      "properties": {
+        "build": {
+          "enum": [
+            "NOT_BUILT",
+            "BUILD_FAILED",
+            "BUILD_STATIC_VALIDATED"
+          ]
+        },
+        "package": {
+          "enum": [
+            "NOT_VALIDATED",
+            "PACKAGE_FAILED",
+            "PACKAGE_VALIDATED",
+            "PACKAGE_VALIDATED_WITH_SCOPED_WAIVER"
+          ]
+        },
+        "installation": {
+          "enum": [
+            "NOT_INSTALLED",
+            "INSTALL_PREPARED",
+            "INSTALL_VALIDATED",
+            "ROLLED_BACK"
+          ]
+        },
+        "runtime": {
+          "enum": [
+            "RUNTIME_UNTESTED",
+            "RUNTIME_OBSERVED_PASS",
+            "RUNTIME_OBSERVED_FAIL",
+            "RUNTIME_INCONCLUSIVE"
+          ]
+        },
+        "causal": {
+          "enum": [
+            "NOT_ASSESSED",
+            "CAUSALLY_ISOLATED",
+            "CAUSALLY_CONFOUNDED",
+            "CAUSALITY_INCONCLUSIVE"
+          ]
+        },
+        "disposition": {
+          "enum": [
+            "ACTIVE",
+            "REJECTED",
+            "SUPERSEDED",
+            "ARCHIVED"
+          ]
+        },
+        "computed_from_event_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "maxLength": 128
+          }
+        },
+        "computed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "runtime_validation_requirement": {
+          "enum": [
+            "UNKNOWN",
+            "REQUIRED",
+            "NOT_REQUIRED_WITH_EVIDENCE"
+          ]
+        },
+        "runtime_validation_requirement_evidence_refs": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$"
+    },
+    "evidence_refs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      }
+    },
+    "lifecycle_event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "event_type",
+        "occurred_at",
+        "evidence_refs",
+        "producer"
+      ],
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "event_type": {
+          "enum": [
+            "BUILD_FAILED",
+            "BUILD_STATIC_VALIDATED",
+            "PACKAGE_FAILED",
+            "PACKAGE_VALIDATED",
+            "PACKAGE_VALIDATED_WITH_SCOPED_WAIVER",
+            "INSTALL_PREPARED",
+            "INSTALL_VALIDATED",
+            "ROLLED_BACK",
+            "RUNTIME_UNTESTED",
+            "RUNTIME_OBSERVED_PASS",
+            "RUNTIME_OBSERVED_FAIL",
+            "RUNTIME_INCONCLUSIVE",
+            "CAUSALLY_ISOLATED",
+            "CAUSALLY_CONFOUNDED",
+            "CAUSALITY_INCONCLUSIVE",
+            "REJECTED",
+            "SUPERSEDED",
+            "ARCHIVED"
+          ]
+        },
+        "occurred_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "producer": {
+          "enum": [
+            "builder",
+            "package_validator",
+            "installer",
+            "runtime_importer",
+            "user_confirmation",
+            "causal_analysis",
+            "migration",
+            "operator"
+          ]
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/evidence_refs"
+        },
+        "deployment_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^deploy:sha256:[A-Fa-f0-9]{64}$"
+        },
+        "deployment_binding_state": {
+          "enum": [
+            "EXACT",
+            "DEPLOYMENT_UNBOUND_LEGACY"
+          ]
+        },
+        "xml_tbl_gate": {
+          "enum": [
+            "NOT_APPLICABLE",
+            "CLEAR",
+            "UNKNOWN_WITH_SCOPED_WAIVER"
+          ]
+        },
+        "xml_tbl_verdict_refs": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        },
+        "runtime_session_ids": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "maxLength": 128
+          }
+        },
+        "superseding_candidate_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^cand:sha256:[A-Fa-f0-9]{64}$"
+        },
+        "notes": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 4000
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "event_type": {
+                "const": "SUPERSEDED"
+              }
+            },
+            "required": [
+              "event_type"
+            ]
+          },
+          "then": {
+            "required": [
+              "superseding_candidate_id"
+            ],
+            "properties": {
+              "superseding_candidate_id": {
+                "type": "string",
+                "pattern": "^cand:sha256:[A-Fa-f0-9]{64}$"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "event_type": {
+                "const": "INSTALL_VALIDATED"
+              }
+            },
+            "required": [
+              "event_type"
+            ]
+          },
+          "then": {
+            "required": [
+              "deployment_id",
+              "deployment_binding_state"
+            ],
+            "properties": {
+              "deployment_id": {
+                "type": "string",
+                "pattern": "^deploy:sha256:[A-Fa-f0-9]{64}$"
+              },
+              "deployment_binding_state": {
+                "const": "EXACT"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "event_type": {
+                "enum": [
+                  "RUNTIME_OBSERVED_PASS",
+                  "RUNTIME_OBSERVED_FAIL"
+                ]
+              }
+            },
+            "required": [
+              "event_type"
+            ]
+          },
+          "then": {
+            "required": [
+              "deployment_id",
+              "deployment_binding_state",
+              "runtime_session_ids"
+            ],
+            "properties": {
+              "deployment_id": {
+                "type": "string",
+                "pattern": "^deploy:sha256:[A-Fa-f0-9]{64}$"
+              },
+              "deployment_binding_state": {
+                "const": "EXACT"
+              },
+              "runtime_session_ids": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 256,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "event_type": {
+                "const": "PACKAGE_VALIDATED"
+              }
+            },
+            "required": [
+              "event_type"
+            ]
+          },
+          "then": {
+            "required": [
+              "xml_tbl_gate",
+              "xml_tbl_verdict_refs"
+            ],
+            "properties": {
+              "xml_tbl_gate": {
+                "enum": [
+                  "NOT_APPLICABLE",
+                  "CLEAR"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "event_type": {
+                "const": "PACKAGE_VALIDATED_WITH_SCOPED_WAIVER"
+              }
+            },
+            "required": [
+              "event_type"
+            ]
+          },
+          "then": {
+            "required": [
+              "xml_tbl_gate",
+              "xml_tbl_verdict_refs"
+            ],
+            "properties": {
+              "xml_tbl_gate": {
+                "const": "UNKNOWN_WITH_SCOPED_WAIVER"
+              },
+              "xml_tbl_verdict_refs": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

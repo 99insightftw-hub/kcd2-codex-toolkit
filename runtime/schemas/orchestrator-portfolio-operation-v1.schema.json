@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/orchestrator-portfolio-operation-v1.schema.json",
+  "title": "KCD2 orchestrator portfolio operation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "operation", "result", "identity_before_id",
+    "identity_after_id", "cross_tool_identity", "delegated_results", "reason_codes",
+    "requires_separate_approval", "mutation_performed", "operation_receipt"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.orchestrator-portfolio-operation.v1"},
+    "operation": {
+      "enum": [
+        "inventory_projects", "analyze_active_stack", "compare_variants",
+        "prepare_candidate", "release_check", "rollback"
+      ]
+    },
+    "result": {"enum": ["PASS", "BLOCKED", "CAPTURE_INCONCLUSIVE", "NOT_APPLICABLE"]},
+    "identity_before_id": {"type": "string", "pattern": "^identity:sha256:[0-9a-f]{64}$"},
+    "identity_after_id": {"type": "string", "pattern": "^identity:sha256:[0-9a-f]{64}$"},
+    "cross_tool_identity": {"type": "object"},
+    "delegated_results": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["tool", "response"],
+        "properties": {
+          "tool": {"type": "string", "minLength": 1, "maxLength": 256},
+          "response": {"type": "string", "minLength": 2, "maxLength": 1048576}
+        }
+      }
+    },
+    "reason_codes": {
+      "type": "array", "maxItems": 2048, "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 128}
+    },
+    "requires_separate_approval": {"type": "boolean"},
+    "mutation_performed": {"const": false},
+    "operation_receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version", "receipt_id", "investigation_id", "operation",
+        "request_sha256", "delegated_calls", "result", "identity_before_id",
+        "identity_after_id", "created_at", "blockers", "detail_artifact_sha256"
+      ],
+      "properties": {
+        "schema_version": {"const": "kcd2.orchestrator-operation-receipt.v1"},
+        "receipt_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "investigation_id": {"type": ["string", "null"], "minLength": 1, "maxLength": 256},
+        "operation": {
+          "enum": [
+            "inventory_projects", "analyze_active_stack", "compare_variants",
+            "prepare_candidate", "release_check", "rollback"
+          ]
+        },
+        "request_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "delegated_calls": {
+          "type": "array", "minItems": 1, "maxItems": 32,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "tool", "tool_schema_revision", "plugin_id", "plugin_version",
+              "source_revision_sha256", "request_sha256", "response_sha256",
+              "identity_before_id", "identity_after_id", "result", "reason_codes"
+            ],
+            "properties": {
+              "tool": {"type": "string", "minLength": 1, "maxLength": 256},
+              "tool_schema_revision": {"type": "string", "minLength": 1, "maxLength": 128},
+              "plugin_id": {"type": "string", "minLength": 1, "maxLength": 256},
+              "plugin_version": {"type": "string", "minLength": 1, "maxLength": 128},
+              "source_revision_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "request_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "response_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "identity_before_id": {"type": "string", "pattern": "^identity:sha256:[0-9a-f]{64}$"},
+              "identity_after_id": {"type": "string", "pattern": "^identity:sha256:[0-9a-f]{64}$"},
+              "result": {"enum": ["PASS", "BLOCKED", "CAPTURE_INCONCLUSIVE", "NOT_APPLICABLE"]},
+              "reason_codes": {
+                "type": "array", "maxItems": 64, "uniqueItems": true,
+                "items": {"type": "string", "minLength": 1, "maxLength": 128}
+              }
+            }
+          }
+        },
+        "result": {"enum": ["PASS", "BLOCKED", "CAPTURE_INCONCLUSIVE", "NOT_APPLICABLE"]},
+        "identity_before_id": {"type": "string", "pattern": "^identity:sha256:[0-9a-f]{64}$"},
+        "identity_after_id": {"type": "string", "pattern": "^identity:sha256:[0-9a-f]{64}$"},
+        "created_at": {"type": "string", "format": "date-time", "maxLength": 64},
+        "blockers": {
+          "type": "array", "maxItems": 2048,
+          "items": {"type": "string", "minLength": 1, "maxLength": 128}
+        },
+        "detail_artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

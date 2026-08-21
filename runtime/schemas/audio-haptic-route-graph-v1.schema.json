@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kcd2.local/schemas/audio-haptic-route-graph-v1.schema.json",
+  "title": "KCD2 static audio, animevent, and haptic route graph v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "graph_id",
+    "snapshot_id",
+    "input_path",
+    "context",
+    "status",
+    "evidence_layer",
+    "runtime_state",
+    "runtime_proof",
+    "nodes",
+    "edges",
+    "diagnostics",
+    "resolution"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.audio-haptic-route-graph.v1"},
+    "graph_id": {"type": "string", "pattern": "^audio-route-graph:sha256:[0-9a-f]{64}$"},
+    "snapshot_id": {"$ref": "#/$defs/text"},
+    "input_path": {"$ref": "#/$defs/text"},
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["animevent", "language", "mount", "controller_id"],
+      "properties": {
+        "animevent": {"$ref": "#/$defs/text"},
+        "language": {"$ref": "#/$defs/text"},
+        "mount": {"$ref": "#/$defs/text"},
+        "controller_id": {"$ref": "#/$defs/text"}
+      }
+    },
+    "status": {
+      "enum": ["static_route_resolved", "unresolved", "duplicate_routes"]
+    },
+    "evidence_layer": {"const": "static"},
+    "runtime_state": {"const": "unknown"},
+    "runtime_proof": {"const": false},
+    "nodes": {
+      "type": "array",
+      "maxItems": 19456,
+      "items": {
+        "type": "object",
+        "maxProperties": 16,
+        "required": ["node_id", "kind"],
+        "properties": {
+          "node_id": {"$ref": "#/$defs/text"},
+          "kind": {
+            "enum": [
+              "route",
+              "animevent",
+              "audio_trigger",
+              "haptic_route",
+              "configuration",
+              "controller",
+              "provider"
+            ]
+          }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "maxItems": 24576,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "relationship", "to"],
+        "properties": {
+          "from": {"$ref": "#/$defs/text"},
+          "relationship": {
+            "enum": [
+              "animevent_triggers_audio",
+              "animevent_routes_haptic",
+              "requires_configuration",
+              "targets_controller",
+              "provided_by",
+              "falls_back_to"
+            ]
+          },
+          "to": {"$ref": "#/$defs/text"}
+        }
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "route_ids", "selector"],
+        "properties": {
+          "code": {"const": "DUPLICATE_ROUTE"},
+          "route_ids": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 4096,
+            "items": {"$ref": "#/$defs/text"}
+          },
+          "selector": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["animevent", "language", "mount", "controller_id"],
+            "properties": {
+              "animevent": {"$ref": "#/$defs/text"},
+              "language": {"$ref": "#/$defs/text"},
+              "mount": {"$ref": "#/$defs/text"},
+              "controller_id": {"$ref": "#/$defs/text"}
+            }
+          }
+        }
+      }
+    },
+    "resolution": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "route_id",
+            "provider_id",
+            "configuration_id",
+            "controller_id",
+            "animevent",
+            "audio_trigger",
+            "haptic_route",
+            "language",
+            "mount",
+            "input_path",
+            "fallback_chain",
+            "evidence_layer",
+            "runtime_state"
+          ],
+          "properties": {
+            "route_id": {"$ref": "#/$defs/text"},
+            "provider_id": {"$ref": "#/$defs/text"},
+            "configuration_id": {"$ref": "#/$defs/text"},
+            "controller_id": {"$ref": "#/$defs/text"},
+            "animevent": {"$ref": "#/$defs/text"},
+            "audio_trigger": {"$ref": "#/$defs/text"},
+            "haptic_route": {"$ref": "#/$defs/text"},
+            "language": {"$ref": "#/$defs/text"},
+            "mount": {"$ref": "#/$defs/text"},
+            "input_path": {"$ref": "#/$defs/text"},
+            "fallback_chain": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 4096,
+              "items": {"$ref": "#/$defs/text"}
+            },
+            "evidence_layer": {"const": "static"},
+            "runtime_state": {"const": "unknown"}
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 2048}
+  }
+}

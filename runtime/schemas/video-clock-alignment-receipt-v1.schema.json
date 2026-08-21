@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/video-clock-alignment-receipt-v1.schema.json",
+  "title": "KCD2 external video clock alignment receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "session_id", "session_clock_id", "external_clock_id", "feature_enabled", "recording_control", "video_retention", "alignment_method", "alignment_quality", "matched_marker_count", "offset_ns", "drift_ppm", "ordering", "uncertain_order_intervals", "reason_codes", "status"],
+  "properties": {
+    "schema_version": {"const": "kcd2.video-clock-alignment-receipt.v1"},
+    "session_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "session_clock_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "external_clock_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "feature_enabled": {"type": "boolean"},
+    "recording_control": {"const": "NONE"},
+    "video_retention": {"const": "NONE"},
+    "alignment_method": {"enum": ["marker_linear_fit", "single_marker_offset", "unsynchronized"]},
+    "alignment_quality": {"enum": ["ESTIMATED", "UNSYNCHRONIZED"]},
+    "matched_marker_count": {"type": "integer", "minimum": 0, "maximum": 10000},
+    "offset_ns": {"type": ["integer", "null"]},
+    "drift_ppm": {"type": ["number", "null"], "minimum": 0, "maximum": 1000000},
+    "ordering": {"const": "PARTIAL_ORDER"},
+    "uncertain_order_intervals": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["interval_id", "marker_ids", "session_time_lower_ns", "session_time_upper_ns", "reason"],
+        "properties": {
+          "interval_id": {"type": "string", "minLength": 1, "maxLength": 512},
+          "marker_ids": {"type": "array", "maxItems": 10000, "items": {"type": "string", "minLength": 1, "maxLength": 256}},
+          "session_time_lower_ns": {"type": ["integer", "null"], "minimum": 0},
+          "session_time_upper_ns": {"type": ["integer", "null"], "minimum": 0},
+          "reason": {"enum": ["clock_alignment_uncertainty", "drift_unquantified", "clocks_unsynchronized"]}
+        }
+      }
+    },
+    "reason_codes": {"type": "array", "maxItems": 8, "items": {"enum": ["INSUFFICIENT_MARKERS_FOR_DRIFT", "NO_MATCHED_MARKERS"]}},
+    "status": {"enum": ["complete", "capture_inconclusive"]}
+  }
+}

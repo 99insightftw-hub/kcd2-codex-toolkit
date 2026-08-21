@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/installed-state-reconciliation-v1.schema.json",
+  "title": "KCD2 installed-state reconciliation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "reconciliation_id", "mod_id", "configuration", "providers", "provider_status", "semantic_index", "latest_load"],
+  "properties": {
+    "schema_version": {"const": "kcd2.installed-state-reconciliation.v1"},
+    "reconciliation_id": {"$ref": "#/$defs/text"},
+    "mod_id": {"$ref": "#/$defs/text"},
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "mod_order_path", "entry_count"],
+      "properties": {
+        "state": {"enum": ["enabled", "disabled", "not_listed", "unknown"]},
+        "mod_order_path": {"const": "mods/mod_order.txt"},
+        "entry_count": {"type": "integer", "minimum": 0, "maximum": 4096}
+      }
+    },
+    "providers": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 5,
+      "items": {"$ref": "#/$defs/provider"}
+    },
+    "provider_status": {"enum": ["available_local", "available_external", "available_multiple", "disabled_only", "not_observed", "inconclusive"]},
+    "semantic_index": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["indexed", "snapshot_id", "snapshot_current"],
+      "properties": {
+        "indexed": {"type": "boolean"},
+        "snapshot_id": {"anyOf": [{"$ref": "#/$defs/text"}, {"type": "null"}]},
+        "snapshot_current": {"type": "boolean"}
+      }
+    },
+    "latest_load": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "pak_state", "lua_state", "same_complete_boot", "boot_receipt_id"],
+      "properties": {
+        "state": {"enum": ["pak_opened_lua_loaded", "pak_opened_lua_failed", "pak_opened_lua_not_observed", "pak_not_opened", "capture_inconclusive"]},
+        "pak_state": {"enum": ["confirmed", "not_observed", "incomplete"]},
+        "lua_state": {"enum": ["loaded", "failed", "not_observed", "incomplete"]},
+        "same_complete_boot": {"type": "boolean"},
+        "boot_receipt_id": {"anyOf": [{"$ref": "#/$defs/text"}, {"type": "null"}]}
+      }
+    }
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "path": {"type": "string", "minLength": 1, "maxLength": 1024, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.?/)(?!.*//).+$"},
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "state", "paths"],
+      "properties": {
+        "kind": {"enum": ["local", "workshop", "vortex", "disabled", "unknown"]},
+        "state": {"enum": ["present", "missing", "disabled", "unavailable", "unknown"]},
+        "paths": {"type": "array", "maxItems": 64, "uniqueItems": true, "items": {"$ref": "#/$defs/path"}}
+      },
+      "allOf": [
+        {"if": {"properties": {"state": {"const": "present"}}}, "then": {"properties": {"paths": {"minItems": 1}}}, "else": {"properties": {"paths": {"maxItems": 0}}}}
+      ]
+    }
+  },
+  "$comment": "IDX-016 introduces this schema. Configuration, provider observations, semantic indexing, exact snapshot freshness, and latest-load evidence are intentionally independent dimensions."
+}

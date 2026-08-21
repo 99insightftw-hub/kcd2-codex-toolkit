@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/balance-table-rpg-stack-acceptance-v1.schema.json",
+  "title": "KCD2 balance, table, and RPG stack acceptance v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "acceptance_id",
+    "stack_id",
+    "status",
+    "reason_codes",
+    "absence_claim_allowed",
+    "gates",
+    "summary",
+    "bounds"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.balance-table-rpg-stack-acceptance.v1"},
+    "acceptance_id": {"$ref": "#/$defs/text"},
+    "stack_id": {
+      "type": "string",
+      "pattern": "^compatibility-stack:sha256:[0-9a-f]{64}$"
+    },
+    "status": {"$ref": "#/$defs/status"},
+    "reason_codes": {"$ref": "#/$defs/reasons"},
+    "absence_claim_allowed": {"type": "boolean"},
+    "gates": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["gate_id", "status", "reason_codes"],
+        "properties": {
+          "gate_id": {
+            "enum": [
+              "stack_identity",
+              "table_semantics",
+              "record_attribute_winners",
+              "references_restoration",
+              "compounded_effects",
+              "inventory_chains",
+              "tbl_release"
+            ]
+          },
+          "status": {"$ref": "#/$defs/status"},
+          "reason_codes": {"$ref": "#/$defs/reasons"}
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "table_count",
+        "semantic_baseline_count",
+        "inventory_chain_count",
+        "compounded_effect_count",
+        "tbl_report_count"
+      ],
+      "properties": {
+        "table_count": {"type": "integer", "minimum": 0, "maximum": 256},
+        "semantic_baseline_count": {"type": "integer", "minimum": 0, "maximum": 20000},
+        "inventory_chain_count": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "compounded_effect_count": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "tbl_report_count": {"type": "integer", "minimum": 0, "maximum": 256}
+      }
+    },
+    "bounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_tables",
+        "max_records",
+        "max_inventory_chains",
+        "max_compounded_effects"
+      ],
+      "properties": {
+        "max_tables": {"const": 256},
+        "max_records": {"const": 20000},
+        "max_inventory_chains": {"const": 4096},
+        "max_compounded_effects": {"const": 4096}
+      }
+    }
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "status": {"enum": ["PASS", "FAIL", "INCONCLUSIVE"]},
+    "reasons": {
+      "type": "array",
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/text"}
+    }
+  }
+}

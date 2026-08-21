@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/legacy-probe-migration-plan-v2.schema.json",
+  "title": "KCD2 reviewed legacy probe to v2 migration plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "legacy_probe_id",
+    "artifacts",
+    "event_contract",
+    "cleanup_requirements",
+    "v2_target"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.legacy-probe-migration-plan.v2"},
+    "legacy_probe_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest", "source", "installed_dll", "log"],
+      "properties": {
+        "manifest": {"$ref": "#/$defs/relative_path"},
+        "source": {"$ref": "#/$defs/relative_path"},
+        "installed_dll": {"$ref": "#/$defs/relative_path"},
+        "log": {"$ref": "#/$defs/relative_path"}
+      }
+    },
+    "event_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startup_events", "target_events", "required_controls"],
+      "properties": {
+        "startup_events": {"$ref": "#/$defs/event_names"},
+        "target_events": {"$ref": "#/$defs/event_names"},
+        "required_controls": {"$ref": "#/$defs/event_names"}
+      }
+    },
+    "cleanup_requirements": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    },
+    "v2_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["probe_contract_schema_version", "probe_bundle_schema_version"],
+      "properties": {
+        "probe_contract_schema_version": {"const": "kcd2.probe-contract.v2"},
+        "probe_bundle_schema_version": {"const": "kcd2.probe-bundle.v2"}
+      }
+    }
+  },
+  "$defs": {
+    "relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^(?![A-Za-z]:)(?![/\\\\])(?!.*\\.\\.).+"
+    },
+    "event_names": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,127}$"}
+    }
+  }
+}

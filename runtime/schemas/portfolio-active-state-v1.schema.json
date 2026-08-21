@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/portfolio-active-state-v1.schema.json",
+  "title": "KCD2 exact portfolio active state v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "link_id", "registry_id", "inventory_id", "evaluated_at", "status", "snapshot", "mod_order", "latest_boot", "coverage", "projects", "drift_events"],
+  "properties": {
+    "schema_version": {"const": "kcd2.portfolio-active-state.v1"},
+    "link_id": {"type": "string", "pattern": "^portfolio-active-state:sha256:[0-9a-f]{64}$"},
+    "registry_id": {"type": "string", "pattern": "^registry:sha256:[0-9a-f]{64}$"},
+    "inventory_id": {"type": "string", "pattern": "^project-inventory:sha256:[0-9a-f]{64}$"},
+    "evaluated_at": {"type": "string", "format": "date-time"},
+    "status": {"enum": ["exact_current", "capture_inconclusive"]},
+    "snapshot": {"$ref": "#/$defs/snapshot"},
+    "mod_order": {"$ref": "#/$defs/mod_order"},
+    "latest_boot": {"$ref": "#/$defs/latest_boot"},
+    "coverage": {"$ref": "#/$defs/coverage"},
+    "projects": {"type": "array", "minItems": 1, "maxItems": 256, "items": {"$ref": "#/$defs/project"}},
+    "drift_events": {"type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/drift"}}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 2048},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nullable_sha256": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+    "project_id": {"type": "string", "pattern": "^project:sha256:[0-9a-f]{64}$"},
+    "coverage_status": {"enum": ["COMPLETE", "COMPLETE_FOR_REQUESTED_SCOPE", "PARTIAL_LIMIT_REACHED", "PARTIAL_STALE", "INCONCLUSIVE", "UNAVAILABLE"]},
+    "snapshot": {
+      "type": "object", "additionalProperties": false,
+      "required": ["snapshot_id", "sha256", "current", "coverage_status"],
+      "properties": {
+        "snapshot_id": {"$ref": "#/$defs/text"}, "sha256": {"$ref": "#/$defs/sha256"},
+        "current": {"type": "boolean"}, "coverage_status": {"$ref": "#/$defs/coverage_status"}
+      }
+    },
+    "mod_order": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256", "snapshot_sha256"],
+      "properties": {
+        "path": {"const": "mods/mod_order.txt"}, "sha256": {"$ref": "#/$defs/sha256"},
+        "snapshot_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "latest_boot": {
+      "type": "object", "additionalProperties": false,
+      "required": ["boot_id", "receipt_id", "receipt_sha256", "snapshot_sha256", "mod_order_sha256", "complete", "latest_complete_boot"],
+      "properties": {
+        "boot_id": {"$ref": "#/$defs/text"}, "receipt_id": {"$ref": "#/$defs/text"},
+        "receipt_sha256": {"$ref": "#/$defs/sha256"}, "snapshot_sha256": {"$ref": "#/$defs/sha256"},
+        "mod_order_sha256": {"$ref": "#/$defs/sha256"}, "complete": {"type": "boolean"},
+        "latest_complete_boot": {"type": "boolean"}
+      }
+    },
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "inventory_status", "snapshot_status", "absence_claim_allowed", "reason_codes"],
+      "properties": {
+        "status": {"enum": ["complete", "partial"]},
+        "inventory_status": {"$ref": "#/$defs/coverage_status"}, "snapshot_status": {"$ref": "#/$defs/coverage_status"},
+        "absence_claim_allowed": {"type": "boolean"},
+        "reason_codes": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}}
+      }
+    },
+    "provider": {
+      "type": "object", "additionalProperties": false,
+      "required": ["provider_id", "states", "sha256"],
+      "properties": {
+        "provider_id": {"$ref": "#/$defs/text"},
+        "states": {"type": "array", "maxItems": 7, "uniqueItems": true, "items": {"enum": ["configured", "present", "loaded", "inactive", "malformed", "duplicate", "unknown"]}},
+        "sha256": {"$ref": "#/$defs/nullable_sha256"}
+      }
+    },
+    "runtime_session": {
+      "type": "object", "additionalProperties": false,
+      "required": ["session_id", "status", "latest_boot_id", "session_binding_sha256", "candidate_sha256", "deployment_sha256", "source_sha256"],
+      "properties": {
+        "session_id": {"$ref": "#/$defs/text"}, "status": {"enum": ["exact", "stale"]},
+        "latest_boot_id": {"$ref": "#/$defs/text"}, "session_binding_sha256": {"$ref": "#/$defs/sha256"},
+        "candidate_sha256": {"$ref": "#/$defs/sha256"}, "deployment_sha256": {"$ref": "#/$defs/sha256"},
+        "source_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "project": {
+      "type": "object", "additionalProperties": false,
+      "required": ["project_id", "status", "reason_codes", "configuration", "semantic_index", "latest_load_state", "providers", "runtime_sessions"],
+      "properties": {
+        "project_id": {"$ref": "#/$defs/project_id"}, "status": {"enum": ["current", "partial", "stale", "missing"]},
+        "reason_codes": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+        "configuration": {
+          "type": "object", "additionalProperties": false, "required": ["state", "mod_order_path", "entry_count"],
+          "properties": {"state": {"enum": ["enabled", "disabled", "not_listed", "unknown"]}, "mod_order_path": {"const": "mods/mod_order.txt"}, "entry_count": {"type": "integer", "minimum": 0, "maximum": 4096}}
+        },
+        "semantic_index": {
+          "type": "object", "additionalProperties": false, "required": ["indexed", "snapshot_id", "snapshot_current", "status", "current_truth"],
+          "properties": {"indexed": {"type": "boolean"}, "snapshot_id": {"anyOf": [{"$ref": "#/$defs/text"}, {"type": "null"}]}, "snapshot_current": {"type": "boolean"}, "status": {"enum": ["current", "partial", "stale", "missing"]}, "current_truth": {"type": "boolean"}}
+        },
+        "latest_load_state": {"enum": ["pak_opened_lua_loaded", "pak_opened_lua_failed", "pak_opened_lua_not_observed", "pak_not_opened", "capture_inconclusive"]},
+        "providers": {"type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/provider"}},
+        "runtime_sessions": {"type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/runtime_session"}}
+      }
+    },
+    "drift": {
+      "type": "object", "additionalProperties": false,
+      "required": ["event_id", "project_id", "drift_kind", "expected", "observed", "evidence_layer"],
+      "properties": {
+        "event_id": {"type": "string", "pattern": "^portfolio-drift:sha256:[0-9a-f]{64}$"}, "project_id": {"$ref": "#/$defs/project_id"},
+        "drift_kind": {"enum": ["semantic_index_stale", "latest_load_boot_drift", "runtime_latest_boot_drift", "runtime_active_snapshot_drift", "runtime_mod_order_drift"]},
+        "expected": {"anyOf": [{"$ref": "#/$defs/text"}, {"type": "null"}]}, "observed": {"anyOf": [{"$ref": "#/$defs/text"}, {"type": "null"}]},
+        "evidence_layer": {"const": "reconciled_read_only"}
+      }
+    }
+  },
+  "$comment": "PORT-005 adds a derived linker result. It does not migrate or reinterpret portfolio-registry-v1, project-provider-inventory-v1, installed-state-reconciliation-v1, or runtime-session-record-v1."
+}

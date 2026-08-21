@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/runtime-route-correlation-v1.schema.json",
+  "title": "KCD2 runtime route correlation report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "profile_id", "session_id", "identity", "validity", "reason_codes", "routes", "summary"],
+  "properties": {
+    "schema_version": {"const": "kcd2.runtime-route-correlation.v1"},
+    "status": {"enum": ["correlated", "capture_inconclusive"]},
+    "profile_id": {"$ref": "#/$defs/text"},
+    "session_id": {"$ref": "#/$defs/text"},
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["environment_id", "environment_fingerprint_sha256", "deployment_id", "deployment_identity_sha256"],
+      "properties": {
+        "environment_id": {"$ref": "#/$defs/text_identity"},
+        "deployment_id": {"$ref": "#/$defs/text_identity"},
+        "environment_fingerprint_sha256": {"$ref": "#/$defs/digest_identity"},
+        "deployment_identity_sha256": {"$ref": "#/$defs/digest_identity"}
+      }
+    },
+    "validity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity_filter_valid", "correlation_valid", "capture_complete", "negative_capture_valid"],
+      "properties": {
+        "identity_filter_valid": {"type": "boolean"},
+        "correlation_valid": {"type": "boolean"},
+        "capture_complete": {"type": "boolean"},
+        "negative_capture_valid": {"type": "boolean"}
+      }
+    },
+    "reason_codes": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[A-Z0-9_]+$", "maxLength": 128}
+    },
+    "routes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4096,
+      "items": {"$ref": "#/$defs/route"}
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["route_count", "routes_with_disappearance_count", "unknown_interval_count"],
+      "properties": {
+        "route_count": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "routes_with_disappearance_count": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "unknown_interval_count": {"type": "integer", "minimum": 0, "maximum": 16384}
+      }
+    }
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "nullable_text": {"type": ["string", "null"], "minLength": 1, "maxLength": 1024},
+    "nullable_digest": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "references": {"type": "array", "maxItems": 256, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "text_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expected", "runtime_start", "match"],
+      "properties": {
+        "expected": {"$ref": "#/$defs/nullable_text"},
+        "runtime_start": {"$ref": "#/$defs/nullable_text"},
+        "match": {"type": "boolean"}
+      }
+    },
+    "digest_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expected", "runtime_start", "runtime_close", "match", "unchanged_at_close"],
+      "properties": {
+        "expected": {"$ref": "#/$defs/nullable_digest"},
+        "runtime_start": {"$ref": "#/$defs/nullable_digest"},
+        "runtime_close": {"$ref": "#/$defs/nullable_digest"},
+        "match": {"type": "boolean"},
+        "unchanged_at_close": {"type": "boolean"}
+      }
+    },
+    "stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "state", "monotonic_ns", "evidence_refs", "unknown_reason"],
+      "properties": {
+        "stage": {"enum": ["route_declared", "row_enumerated", "selector_matched", "candidate_selected", "behavior_observed"]},
+        "state": {"enum": ["observed", "not_observed", "unknown"]},
+        "monotonic_ns": {"type": ["integer", "null"], "minimum": 0, "maximum": 9223372036854775807},
+        "evidence_refs": {"$ref": "#/$defs/references"},
+        "unknown_reason": {"type": ["string", "null"], "maxLength": 128}
+      }
+    },
+    "interval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from_stage", "to_stage", "status", "start_monotonic_ns", "end_monotonic_ns", "unknown_reason"],
+      "properties": {
+        "from_stage": {"$ref": "#/$defs/text"},
+        "to_stage": {"$ref": "#/$defs/text"},
+        "status": {"enum": ["bounded", "unknown"]},
+        "start_monotonic_ns": {"type": ["integer", "null"], "minimum": 0, "maximum": 9223372036854775807},
+        "end_monotonic_ns": {"type": ["integer", "null"], "minimum": 0, "maximum": 9223372036854775807},
+        "unknown_reason": {"type": ["string", "null"], "maxLength": 128}
+      }
+    },
+    "route": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["route_id", "pairing_id", "mode", "orientation", "static_evidence_refs", "stages", "unknown_intervals", "earliest_disappearance_stage", "earliest_disappearance", "claims", "summary"],
+      "properties": {
+        "route_id": {"$ref": "#/$defs/text"},
+        "pairing_id": {"$ref": "#/$defs/text"},
+        "mode": {"$ref": "#/$defs/text"},
+        "orientation": {"$ref": "#/$defs/text"},
+        "static_evidence_refs": {"$ref": "#/$defs/references"},
+        "stages": {"type": "array", "minItems": 5, "maxItems": 5, "items": {"$ref": "#/$defs/stage"}},
+        "unknown_intervals": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"$ref": "#/$defs/interval"}},
+        "earliest_disappearance_stage": {"type": ["string", "null"], "enum": [null, "route_declared", "row_enumerated", "selector_matched", "candidate_selected", "behavior_observed"]},
+        "earliest_disappearance": {"type": ["string", "null"], "enum": [null, "route_not_observed", "row_not_enumerated", "selector_not_matched", "candidate_not_selected", "behavior_not_observed"]},
+        "claims": {"type": "array", "maxItems": 1, "uniqueItems": true, "items": {"enum": ["route_not_observed", "row_not_enumerated", "selector_not_matched", "candidate_not_selected", "behavior_not_observed"]}},
+        "summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["observed_stage_count", "not_observed_stage_count", "unknown_stage_count"],
+          "properties": {
+            "observed_stage_count": {"type": "integer", "minimum": 0, "maximum": 5},
+            "not_observed_stage_count": {"type": "integer", "minimum": 0, "maximum": 5},
+            "unknown_stage_count": {"type": "integer", "minimum": 0, "maximum": 5}
+          }
+        }
+      }
+    }
+  }
+}

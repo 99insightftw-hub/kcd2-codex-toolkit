@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/portfolio-relationship-registry-v1.schema.json",
+  "title": "KCD2 append-only portfolio relationship registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "registry_id",
+    "source_portfolio_registry_id",
+    "observed_at",
+    "project_ids",
+    "relationships"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "kcd2.portfolio-relationship-registry.v1"
+    },
+    "registry_id": {
+      "type": "string",
+      "pattern": "^relationship-registry:sha256:[0-9a-f]{64}$"
+    },
+    "source_portfolio_registry_id": {
+      "type": "string",
+      "pattern": "^registry:sha256:[0-9a-f]{64}$"
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time",
+      "maxLength": 64
+    },
+    "project_ids": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4096,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/project_id"
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "maxItems": 50000,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/relationship"
+      }
+    }
+  },
+  "$defs": {
+    "project_id": {
+      "type": "string",
+      "pattern": "^project:sha256:[0-9a-f]{64}$"
+    },
+    "relationship_type": {
+      "enum": [
+        "PARENT_OF",
+        "DERIVED_FROM",
+        "SUPERSEDES",
+        "REPLACES",
+        "COMPOSITE_WITH",
+        "BUNDLES",
+        "COMPATIBILITY_FOR",
+        "OPTIONAL_FEATURE_OF",
+        "VARIANT_OF",
+        "LANGUAGE_VARIANT_OF",
+        "MUTUALLY_EXCLUSIVE_WITH",
+        "REQUIRES",
+        "CONFLICTS_WITH",
+        "MIRRORS",
+        "UNKNOWN_REQUIRES_DECLARATION"
+      ]
+    },
+    "evidence_refs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 2048
+      }
+    },
+    "relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "relationship_id",
+        "relationship_type",
+        "source_project_id",
+        "target_project_id",
+        "evidence_refs",
+        "unknown_reason",
+        "legacy_reference"
+      ],
+      "properties": {
+        "relationship_id": {
+          "type": "string",
+          "pattern": "^relationship:sha256:[0-9a-f]{64}$"
+        },
+        "relationship_type": {
+          "$ref": "#/$defs/relationship_type"
+        },
+        "source_project_id": {
+          "$ref": "#/$defs/project_id"
+        },
+        "target_project_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/project_id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/evidence_refs"
+        },
+        "unknown_reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "legacy_reference": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 2048
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "relationship_type"
+            ],
+            "properties": {
+              "relationship_type": {
+                "const": "UNKNOWN_REQUIRES_DECLARATION"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "unknown_reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "target_project_id": {
+                "$ref": "#/$defs/project_id"
+              },
+              "unknown_reason": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

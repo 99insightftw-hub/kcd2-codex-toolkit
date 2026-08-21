@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.kcd2.toolchain/schemas/ephemeral-workspace-cleanup-v1.schema.json",
+  "title": "KCD2 ephemeral workspace cleanup receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "receipt_id",
+    "workspace_classification",
+    "operation_id",
+    "workspace_name",
+    "source_access",
+    "candidate_build_mutation",
+    "allowed_namespaces",
+    "members_removed",
+    "cleanup_state",
+    "cleanup_errors",
+    "workspace_exists_after_cleanup",
+    "identity_id",
+    "cross_tool_identity"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.ephemeral-workspace-cleanup.v1"},
+    "receipt_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "workspace_classification": {"const": "EPHEMERAL_READ_ONLY_ANALYSIS"},
+    "operation_id": {"type": "string", "pattern": "^[A-Za-z0-9_.:-]{1,256}$"},
+    "workspace_name": {"type": "string", "pattern": "^analysis-[0-9a-f]{64}$"},
+    "source_access": {"const": "READ_ONLY_COPY"},
+    "candidate_build_mutation": {"const": false},
+    "allowed_namespaces": {
+      "type": "array",
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {"enum": ["inputs", "extracted", "parsed", "reports"]}
+    },
+    "members_removed": {
+      "type": "array",
+      "maxItems": 16384,
+      "items": {"$ref": "#/$defs/member"}
+    },
+    "cleanup_state": {"enum": ["CLEANED", "CLEANUP_FAILED"]},
+    "cleanup_errors": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {"type": "string", "minLength": 1, "maxLength": 2048}
+    },
+    "workspace_exists_after_cleanup": {"type": "boolean"},
+    "identity_id": {"type": "string", "pattern": "^identity:sha256:[0-9a-f]{64}$"},
+    "cross_tool_identity": {
+      "type": "object",
+      "additionalProperties": {},
+      "maxProperties": 14,
+      "propertyNames": {"type": "string", "minLength": 1, "maxLength": 128},
+      "required": ["schema_version", "identity_id"],
+      "properties": {
+        "schema_version": {"const": "kcd2.cross-tool-identity.v1"},
+        "identity_id": {"type": "string", "pattern": "^identity:sha256:[0-9a-f]{64}$"}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"cleanup_state": {"const": "CLEANED"}}},
+      "then": {
+        "properties": {
+          "cleanup_errors": {"maxItems": 0},
+          "workspace_exists_after_cleanup": {"const": false}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "member": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relative_path", "kind", "sha256", "bytes"],
+      "properties": {
+        "relative_path": {"type": "string", "minLength": 1, "maxLength": 2048},
+        "kind": {"enum": ["file", "symbolic_link"]},
+        "sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "bytes": {"type": "integer", "minimum": 0, "maximum": 1099511627776}
+      }
+    }
+  }
+}

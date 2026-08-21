@@ -1,0 +1,14 @@
+interface:
+  display_name: "KCD2 Index Research"
+  short_description: "Search, resolve, and trace private KCD2 indexes safely"
+  default_prompt: "Use $kcd2-index-research to check the indexes and investigate this KCD2 question."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "kcd2-index"
+      description: "Read-only KCD2 source, semantic, UI/GFx, and resolution indexes"
+      transport: "stdio"
+
+policy:
+  allow_implicit_invocation: true

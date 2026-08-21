@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elfi0044.local/kcd2/ai-quest-provider-contract-v1.schema.json",
+  "title": "KCD2 AI and quest provider contract v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "provider_contract_id", "revision", "audit_schema_version",
+    "operations", "capabilities", "claim_permissions", "retention_policy",
+    "evidence_policy", "limits"
+  ],
+  "properties": {
+    "schema_version": {"const": "kcd2.ai-quest-provider-contract.v1"},
+    "provider_contract_id": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "revision": {"type": "string", "minLength": 1, "maxLength": 128},
+    "audit_schema_version": {"const": "kcd2.ai-quest-graph-audit.v1"},
+    "operations": {
+      "type": "array", "minItems": 1, "maxItems": 8, "uniqueItems": true,
+      "items": {
+        "enum": ["describe_capabilities", "audit_static_topology", "ingest_runtime_markers"]
+      }
+    },
+    "capabilities": {
+      "type": "array", "minItems": 1, "maxItems": 9,
+      "items": {"$ref": "#/$defs/capability"}
+    },
+    "claim_permissions": {"$ref": "#/$defs/claim_permissions"},
+    "retention_policy": {"$ref": "#/$defs/retention_policy"},
+    "evidence_policy": {"$ref": "#/$defs/evidence_policy"},
+    "limits": {"$ref": "#/$defs/limits"}
+  },
+  "$defs": {
+    "domain": {
+      "enum": [
+        "quest_graph", "xgen", "smart_object", "scheduler", "storm", "spawn",
+        "role", "faction", "persistence"
+      ]
+    },
+    "capability": {
+      "type": "object", "additionalProperties": false,
+      "required": ["domain", "support_state", "reason_code"],
+      "properties": {
+        "domain": {"$ref": "#/$defs/domain"},
+        "support_state": {"enum": ["supported", "unsupported", "partial"]},
+        "reason_code": {"type": ["string", "null"], "minLength": 1, "maxLength": 256}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"support_state": {"const": "supported"}}},
+          "then": {"properties": {"reason_code": {"const": null}}}
+        },
+        {
+          "if": {"properties": {"support_state": {"enum": ["unsupported", "partial"]}}},
+          "then": {"properties": {"reason_code": {"type": "string"}}}
+        }
+      ]
+    },
+    "claim_permissions": {
+      "type": "object", "additionalProperties": false,
+      "required": ["presence", "absence", "ownership", "runtime_execution", "causal"],
+      "properties": {
+        "presence": {"type": "boolean"},
+        "absence": {"type": "boolean"},
+        "ownership": {"type": "boolean"},
+        "runtime_execution": {"type": "boolean"},
+        "causal": {"type": "boolean"}
+      }
+    },
+    "retention_policy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["unsupported_nodes", "unresolved_edges", "raw_kinds"],
+      "properties": {
+        "unsupported_nodes": {"const": true},
+        "unresolved_edges": {"const": true},
+        "raw_kinds": {"const": true}
+      }
+    },
+    "evidence_policy": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "static_runtime_separated", "causal_requires_correlation",
+        "invalid_capture_outcome"
+      ],
+      "properties": {
+        "static_runtime_separated": {"const": true},
+        "causal_requires_correlation": {"const": true},
+        "invalid_capture_outcome": {"const": "capture_inconclusive"}
+      }
+    },
+    "limits": {
+      "type": "object", "additionalProperties": false,
+      "required": ["max_nodes", "max_edges", "max_runtime_markers", "max_document_bytes"],
+      "properties": {
+        "max_nodes": {"type": "integer", "minimum": 1, "maximum": 100000},
+        "max_edges": {"type": "integer", "minimum": 1, "maximum": 250000},
+        "max_runtime_markers": {"type": "integer", "minimum": 1, "maximum": 250000},
+        "max_document_bytes": {"type": "integer", "minimum": 1024, "maximum": 16777216}
+      }
+    }
+  }
+}
